@@ -1,0 +1,73 @@
+/* 水平间距 */
+/* 水平间距 */
+.container {
+  padding: 10px;
+  position: relative;
+}
+.search-result {
+  margin-top: 10px;
+}
+.search-result .uni-list-item .uni-list-item__container {
+  padding: 12px;
+}
+.search-result .uni-list-item .uni-list-item__content-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+.search-result .uni-list-item .uni-list-item__content-note {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+.search-result .uni-list-item .uni-list-item__extra-text {
+  font-size: 14px;
+  color: #ff5a5f;
+  font-weight: 500;
+}
+.search-result .uni-list-item .uni-list-item__extra-text:empty::before {
+  content: "暂无报价";
+  color: #999;
+}
+.no-result {
+  padding: 30px 0;
+  text-align: center;
+  color: #999;
+}
+.search-history {
+  margin-top: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 0 15px;
+  position: absolute;
+  top: 54px;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.search-history .history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid rgba(245, 245, 245, 0.4);
+}
+.search-history .history-header .history-title {
+  font-size: 14px;
+  color: #333;
+}
+.search-history .history-list {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 15px 0;
+  gap: 10px;
+}
+.search-history .history-list .history-item {
+  background: rgba(247, 247, 247, 0.4);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+}
+.search-history .history-list .history-item .item-text {
+  line-height: 1;
+}
