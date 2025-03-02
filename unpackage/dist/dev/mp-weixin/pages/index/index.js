@@ -172,10 +172,11 @@ const _sfc_main = {
     // 获取规格文本
     getSpecText(item) {
       common_vendor.index.__f__("log", "at pages/index/index.vue:259", "规格数据:", item);
-      const actuationForce = item.actuation_force ? `触发压力: ${item.actuation_force}` : "";
+      const force = item.actuation_force;
+      const actuationForce = force ? `触发压力: ${force.toString().toLowerCase().includes("gf") ? force : `${force}gf`}` : "";
       const actuationDistance = item.actuation_distance ? ` 触发行程: ${item.actuation_distance}` : "";
       const text = actuationForce + actuationDistance;
-      common_vendor.index.__f__("log", "at pages/index/index.vue:264", "规格文本:", text);
+      common_vendor.index.__f__("log", "at pages/index/index.vue:265", "规格文本:", text);
       return text || "暂无规格信息";
     },
     // 获取价格文本

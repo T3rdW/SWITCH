@@ -256,10 +256,11 @@
 
 			// 获取规格文本
 			getSpecText(item) {
-				console.log('规格数据:', item) // 添加调试日志
-				const actuationForce = item.actuation_force ? `触发压力: ${item.actuation_force}` : ''
+				console.log('规格数据:', item)
+				const force = item.actuation_force
+				const actuationForce = force ?
+					`触发压力: ${force.toString().toLowerCase().includes('gf') ? force : `${force}gf`}` : ''
 				const actuationDistance = item.actuation_distance ? ` 触发行程: ${item.actuation_distance}` : ''
-				// 直接返回拼接后的文本
 				const text = actuationForce + actuationDistance
 				console.log('规格文本:', text) // 添加调试日志
 				return text || '暂无规格信息'

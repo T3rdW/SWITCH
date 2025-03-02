@@ -12,8 +12,8 @@ exports.main = async (event, context) => {
 			return await getSwitchById(event.id)
 		case 'add':
 			return await addSwitch(event.data)
-		case 'update':
-			return await updateSwitch(event.id, event.data)
+		case 'updateSwitch':
+			return await updateSwitch(event)
 		case 'getAll':
 			console.log('执行获取所有数据操作');
 			return await getAllSwitches()
@@ -225,25 +225,36 @@ async function addSwitch(data) {
 }
 
 // 更新轴体数据
-async function updateSwitch(id, data) {
-	const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
-	const updateData = {
-		...data,
-		update_time: now
-	}
+async function updateSwitch(event) {
+	const { id, data } = event
 
 	try {
-		const res = await collection.doc(id).update(updateData)
+		if (!id) {
+			return {
+				code: -1,
+				msg: 'ID不能为空'
+			}
+		}
+
+		// 移除不允许修改的字段
+		delete data._id
+		delete data.create_time
+
+		// 添加更新时间
+		data.update_time = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+
+		const res = await collection.doc(id).update(data)
+
 		return {
 			code: 0,
 			msg: '更新成功',
 			data: res
 		}
 	} catch (e) {
+		console.error('更新轴体数据失败:', e)
 		return {
 			code: -1,
-			msg: '更新失败',
-			error: e
+			msg: '更新失败'
 		}
 	}
 }

@@ -11,7 +11,7 @@ const _sfc_main = {
     };
   },
   onLoad(options) {
-    common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:53", "页面参数:", options);
+    common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:74", "页面参数:", options);
     common_vendor.index.$on("switchData", this.handleSwitchData);
     if (options.id) {
       this.loadSwitchData(options.id);
@@ -23,17 +23,17 @@ const _sfc_main = {
   methods: {
     // 处理图片加载错误
     handleImageError(index) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:69", "图片加载失败:", index);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:90", "图片加载失败:", index);
       if (this.switchImages[index]) {
         this.$set(this.switchImages[index], "fileID", "/static/default_switch.webp");
       }
     },
     // 处理传递来的轴体数据
     handleSwitchData(data) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:78", "接收到轴体数据:", data);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:99", "接收到轴体数据:", data);
       this.switchData = data;
       this.switchImages = Array.isArray(data.images) ? data.images.filter((img) => img && img.fileID) : [];
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:82", "处理后的图片数组:", this.switchImages);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:103", "处理后的图片数组:", this.switchImages);
     },
     // 加载轴体数据
     async loadSwitchData(id) {
@@ -48,11 +48,11 @@ const _sfc_main = {
             id
           }
         });
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:100", "获取轴体数据结果:", res);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:121", "获取轴体数据结果:", res);
         if (res.result.code === 0) {
           this.switchData = res.result.data;
           this.switchImages = Array.isArray(this.switchData.images) ? this.switchData.images.filter((img) => img && img.fileID) : [];
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:107", "加载后的图片数组:", this.switchImages);
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:128", "加载后的图片数组:", this.switchImages);
         } else {
           common_vendor.index.showToast({
             title: res.result.msg,
@@ -60,7 +60,7 @@ const _sfc_main = {
           });
         }
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:115", "加载轴体数据失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:136", "加载轴体数据失败:", e);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -75,15 +75,33 @@ const _sfc_main = {
     },
     // 格式化力度
     getForceText(force) {
-      return force ? `${force}gf` : "暂无数据";
+      if (!force)
+        return "暂无数据";
+      return force.toString().toLowerCase().includes("gf") ? force : `${force}gf`;
     },
-    // 格式化距离
+    // 格式化距离 mm
     getDistanceText(distance) {
-      return distance ? `${distance}mm` : "暂无数据";
+      if (!distance)
+        return "暂无数据";
+      return distance.toString().toLowerCase().includes("mm") ? distance : `${distance}mm`;
     },
     // 格式化时间
     formatTime(time) {
-      return time || "暂无数据";
+      if (!time)
+        return "暂无数据";
+      try {
+        const date = new Date(time);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        const seconds = String(date.getSeconds()).padStart(2, "0");
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:177", "时间格式化失败:", e);
+        return time;
+      }
     }
   }
 };
@@ -132,15 +150,15 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     }),
     i: common_vendor.p({
       title: "轴心材质",
-      ["right-text"]: $options.getForceText($data.switchData.stem_material) || "暂无"
+      ["right-text"]: $data.switchData.stem_material || "暂无"
     }),
     j: common_vendor.p({
       title: "上盖材质",
-      ["right-text"]: $options.getForceText($data.switchData.top_housing_material) || "暂无"
+      ["right-text"]: $data.switchData.top_housing_material || "暂无"
     }),
     k: common_vendor.p({
       title: "底壳材质",
-      ["right-text"]: $options.getDistanceText($data.switchData.bottom_housing_material) || "暂无"
+      ["right-text"]: $data.switchData.bottom_housing_material || "暂无"
     }),
     l: common_vendor.p({
       title: "触发压力",
@@ -159,8 +177,28 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       ["right-text"]: $options.getDistanceText($data.switchData.total_travel)
     }),
     p: common_vendor.p({
+      title: "弹簧长度",
+      ["right-text"]: $data.switchData.spring_length || "暂无"
+    }),
+    q: common_vendor.p({
+      title: "出厂润滑",
+      ["right-text"]: $data.switchData.factory_lube ? "是" : "否"
+    }),
+    r: common_vendor.p({
+      title: "寿命",
+      ["right-text"]: $data.switchData.lifespan || "暂无"
+    }),
+    s: common_vendor.p({
       title: "更新时间",
       ["right-text"]: $options.formatTime($data.switchData.update_time)
+    }),
+    t: common_vendor.p({
+      title: "数据来源",
+      ["right-text"]: $data.switchData.data_source || "暂无"
+    }),
+    v: common_vendor.p({
+      title: "审核状态",
+      ["right-text"]: $data.switchData.audit_status || "暂无"
     })
   });
 }

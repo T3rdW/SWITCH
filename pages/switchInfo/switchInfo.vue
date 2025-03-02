@@ -19,23 +19,44 @@
 		<!-- 轴体信息列表 -->
 		<uni-list class="info-list">
 			<!-- 基本信息 -->
-			<uni-list-item title="轴体名称" :right-text="switchData.name || '暂无'" />
-			<uni-list-item title="代工厂" :right-text="switchData.manufacturer || '暂无'" />
-			<uni-list-item title="轴体分类" :right-text="switchData.category || '暂无'" />
-			<uni-list-item title="上市时间" :right-text="switchData.release_date || '暂无'" />
+			<uni-list-item
+				title="轴体名称"
+				:right-text="switchData.name || '暂无'"
+			>
+			</uni-list-item>
+			<uni-list-item
+				title="代工厂"
+				:right-text="switchData.manufacturer || '暂无'"
+			>
+			</uni-list-item>
+			<uni-list-item
+				title="轴体分类"
+				:right-text="switchData.category || '暂无'"
+			>
+			</uni-list-item>
+			<uni-list-item
+				title="上市时间"
+				:right-text="switchData.release_date || '暂无'"
+			>
+			</uni-list-item>
 			<uni-list-item title="价格" :right-text="getPriceText(switchData.price)" />
 
 			<!-- 规格参数 -->
-			<uni-list-item title="轴心材质" :right-text="getForceText(switchData.stem_material) || '暂无'" />
-			<uni-list-item title="上盖材质" :right-text="getForceText(switchData.top_housing_material) || '暂无'" />
-			<uni-list-item title="底壳材质" :right-text="getDistanceText(switchData.bottom_housing_material) || '暂无'" />
+			<uni-list-item title="轴心材质" :right-text="switchData.stem_material || '暂无'" />
+			<uni-list-item title="上盖材质" :right-text="switchData.top_housing_material || '暂无'" />
+			<uni-list-item title="底壳材质" :right-text="switchData.bottom_housing_material || '暂无'" />
 			<uni-list-item title="触发压力" :right-text="getForceText(switchData.actuation_force)" />
 			<uni-list-item title="触发行程" :right-text="getDistanceText(switchData.actuation_distance)" />
 			<uni-list-item title="触底压力" :right-text="getForceText(switchData.bottom_force)" />
 			<uni-list-item title="总行程" :right-text="getDistanceText(switchData.total_travel)" />
+			<uni-list-item title="弹簧长度" :right-text="switchData.spring_length || '暂无'" />
+			<uni-list-item title="出厂润滑" :right-text="switchData.factory_lube ? '是' : '否'" />
+			<uni-list-item title="寿命" :right-text="switchData.lifespan || '暂无'" />
 
 			<!-- 其他信息 -->
 			<uni-list-item title="更新时间" :right-text="formatTime(switchData.update_time)" />
+			<uni-list-item title="数据来源" :right-text="switchData.data_source || '暂无'" />
+			<uni-list-item title="审核状态" :right-text="switchData.audit_status || '暂无'" />
 		</uni-list>
 	</view>
 </template>
@@ -129,18 +150,34 @@
 
 			// 格式化力度
 			getForceText(force) {
-				return force ? `${force}gf` : '暂无数据'
+				if (!force) return '暂无数据'
+				// 如果已经包含 'gf' 就直接返回，否则添加 'gf'
+				return force.toString().toLowerCase().includes('gf') ? force : `${force}gf`
 			},
 
-			// 格式化距离
+			// 格式化距离 mm
 			getDistanceText(distance) {
-				return distance ? `${distance}mm` : '暂无数据'
+				if (!distance) return '暂无数据'
+				return distance.toString().toLowerCase().includes('mm') ? distance : `${distance}mm`
 			},
 
 			// 格式化时间
 			formatTime(time) {
-				return time || '暂无数据'
-			}
+				if (!time) return '暂无数据'
+				try {
+					const date = new Date(time)
+					const year = date.getFullYear()
+					const month = String(date.getMonth() + 1).padStart(2, '0')
+					const day = String(date.getDate()).padStart(2, '0')
+					const hours = String(date.getHours()).padStart(2, '0')
+					const minutes = String(date.getMinutes()).padStart(2, '0')
+					const seconds = String(date.getSeconds()).padStart(2, '0')
+					return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+				} catch (e) {
+					console.error('时间格式化失败:', e)
+					return time
+				}
+			},
 		}
 	}
 </script>
