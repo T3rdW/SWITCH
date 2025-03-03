@@ -57,6 +57,7 @@
 22.审核状态(audit_status): 轴体数据审核状态，通常为未审核、审核中或已审核。
 23.相关键盘(related_keyboards): 与轴体相关的键盘型号数组。
 24.停产(discontinued): 轴体是否停产，通常为true或false。
+25.用户OPENID(user_open_id): 用户OPENID。
 
 规则:
 1.文件命名规则改为：轴体名称_图片类型_序号.webp

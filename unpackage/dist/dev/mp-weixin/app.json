@@ -9,5 +9,16 @@
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
   },
+  "oauth": {
+    "weixin": {
+      "appid": "wx42b1bce7eb958f9d",
+      "appsecret": "e67d7e55b63c46adeb0c1bfe1aaf4ac5"
+    }
+  },
+  "permission": {
+    "scope.userInfo": {
+      "desc": "用于完善用户资料"
+    }
+  },
   "usingComponents": {}
 }
