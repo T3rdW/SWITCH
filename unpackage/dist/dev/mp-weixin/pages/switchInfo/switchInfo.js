@@ -1,7 +1,11 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
+const RelatedKeyboardsItem = () => "../../components/related-keyboards-item.js";
 const _sfc_main = {
+  components: {
+    RelatedKeyboardsItem
+  },
   data() {
     return {
       switchData: {},
@@ -11,7 +15,7 @@ const _sfc_main = {
     };
   },
   onLoad(options) {
-    common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:66", "页面参数:", options);
+    common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:69", "页面参数:", options);
     common_vendor.index.$on("switchData", this.handleSwitchData);
     if (options.id) {
       this.loadSwitchData(options.id);
@@ -23,17 +27,17 @@ const _sfc_main = {
   methods: {
     // 处理图片加载错误
     handleImageError(index) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:82", "图片加载失败:", index);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:85", "图片加载失败:", index);
       if (this.switchImages[index]) {
         this.$set(this.switchImages[index], "fileID", "/static/default_switch.webp");
       }
     },
     // 处理传递来的轴体数据
     handleSwitchData(data) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:91", "接收到轴体数据:", data);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:94", "接收到轴体数据:", data);
       this.switchData = data;
       this.switchImages = Array.isArray(data.images) ? data.images.filter((img) => img && img.fileID) : [];
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:95", "处理后的图片数组:", this.switchImages);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:98", "处理后的图片数组:", this.switchImages);
     },
     // 加载轴体数据
     async loadSwitchData(id) {
@@ -48,11 +52,11 @@ const _sfc_main = {
             id
           }
         });
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:113", "获取轴体数据结果:", res);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:116", "获取轴体数据结果:", res);
         if (res.result.errCode === 0) {
           this.switchData = res.result.data;
           this.switchImages = Array.isArray(this.switchData.images) ? this.switchData.images.filter((img) => img && img.fileID) : [];
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:120", "加载后的图片数组:", this.switchImages);
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:123", "加载后的图片数组:", this.switchImages);
         } else {
           common_vendor.index.showToast({
             title: res.result.errMsg || "加载失败",
@@ -60,7 +64,7 @@ const _sfc_main = {
           });
         }
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:128", "加载轴体数据失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:131", "加载轴体数据失败:", e);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -106,7 +110,7 @@ const _sfc_main = {
         const seconds = String(date.getSeconds()).padStart(2, "0");
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:184", "时间格式化失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:187", "时间格式化失败:", e);
         return time;
       }
     },
@@ -121,8 +125,9 @@ const _sfc_main = {
 };
 if (!Array) {
   const _easycom_uni_list_item2 = common_vendor.resolveComponent("uni-list-item");
+  const _component_related_keyboards_item = common_vendor.resolveComponent("related-keyboards-item");
   const _easycom_uni_list2 = common_vendor.resolveComponent("uni-list");
-  (_easycom_uni_list_item2 + _easycom_uni_list2)();
+  (_easycom_uni_list_item2 + _component_related_keyboards_item + _easycom_uni_list2)();
 }
 const _easycom_uni_list_item = () => "../../uni_modules/uni-list/components/uni-list-item/uni-list-item.js";
 const _easycom_uni_list = () => "../../uni_modules/uni-list/components/uni-list/uni-list.js";
@@ -215,8 +220,7 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       ["right-text"]: $data.switchData.data_source || "暂无"
     }),
     w: common_vendor.p({
-      title: "相关键盘",
-      ["right-text"]: $options.getRelatedKeyboards($data.switchData.related_keyboards)
+      keyboards: $options.getRelatedKeyboards($data.switchData.related_keyboards)
     }),
     x: common_vendor.p({
       title: "停产",

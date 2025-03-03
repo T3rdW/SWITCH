@@ -41,10 +41,8 @@
 			<!-- 其他信息 -->
 			<uni-list-item title="更新时间" :right-text="formatTime(switchData.update_time)" />
 			<uni-list-item title="数据来源" :right-text="switchData.data_source || '暂无'" />
-			<uni-list-item
-				title="相关键盘"
-				:right-text="getRelatedKeyboards(switchData.related_keyboards)"
-				class="related-keyboards"
+			<related-keyboards-item
+				:keyboards="getRelatedKeyboards(switchData.related_keyboards)"
 			/>
 			<uni-list-item title="停产" :right-text="switchData.discontinued ? '是' : '否'" />
 			<uni-list-item title="备注" :right-text="switchData.remark || '暂无'" />
@@ -54,7 +52,12 @@
 </template>
 
 <script>
+	import RelatedKeyboardsItem from '@/components/related-keyboards-item.vue'
+
 	export default {
+		components: {
+			RelatedKeyboardsItem
+		},
 		data() {
 			return {
 				switchData: {}, // 轴体数据
@@ -233,7 +236,7 @@
 
 			.uni-list-item__content {
 				flex: none;
-				width: 100px;  // 固定宽度
+				width: 100px;
 			}
 
 			.uni-list-item__content-title {
@@ -245,24 +248,19 @@
 			.uni-list-item__extra {
 				flex: 1;
 				overflow: visible;
-				align-items: flex-start;
+				align-items: flex-end;
 			}
 
 			.uni-list-item__extra-text {
 				font-size: 14px;
 				color: #333;
-				text-align: left;
+				text-align: right;
 				white-space: normal;
 				word-break: break-all;
 				line-height: 1.4;
 				width: 100%;
-			}
-
-			&.related-keyboards {
-				.uni-list-item__extra-text {
-					padding: 8px 0;
-					min-height: 44px;  // 确保有足够的空间显示多行文本
-				}
+				padding-left: 15px;
+				padding-right: 15px;
 			}
 		}
 	}
