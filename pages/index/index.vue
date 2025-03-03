@@ -130,10 +130,17 @@
 						.where({ switch_name: new RegExp(keyword, 'i') })
 						.get()
 
-					this.switchList = res.data
+					console.log('搜索返回数据:', res)
+
+					this.switchList = Array.isArray(res.result.data) ? res.result.data : []
 					this.hasSearch = true
+
 					if (this.switchList.length === 0) {
 						console.log('搜索成功但无结果:', keyword)
+						uni.showToast({
+							title: '未找到相关轴体',
+							icon: 'none'
+						})
 					} else {
 						console.log('搜索成功, 找到记录数:', this.switchList.length)
 					}
@@ -142,6 +149,7 @@
 					this.saveSearchHistory(keyword)
 				} catch (e) {
 					console.error('搜索失败:', e)
+					this.switchList = []
 					uni.showToast({
 						title: '搜索失败',
 						icon: 'none'
@@ -150,7 +158,7 @@
 					uni.hideLoading()
 					console.log('搜索完成, 当前状态:', {
 						hasSearch: this.hasSearch,
-						resultCount: this.switchList.length,
+						resultCount: this.switchList?.length || 0,
 						keyword: keyword
 					})
 				}
@@ -233,9 +241,9 @@
 				const force = item.actuation_force
 				const actuationForce = force ?
 					`触发压力: ${force.toString().toLowerCase().includes('gf') ? force : `${force}gf`}` : ''
-				const actuationDistance = item.actuation_distance ? ` 触发行程: ${item.actuation_distance}` : ''
-				const text = actuationForce + actuationDistance
-				console.log('规格文本:', text) // 添加调试日志
+				const actuationTravel = item.actuation_travel ? ` 触发行程: ${item.actuation_travel}` : ''
+				const text = actuationForce + actuationTravel
+				console.log('规格文本:', text)
 				return text || '暂无规格信息'
 			},
 

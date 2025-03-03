@@ -49,7 +49,7 @@
 14.轴体类型(switch_type): 按结构分为线性轴（Linear）、段落轴（Tactile）、有声段落轴（Clicky）。
 15.有无厂润(factory_lube): 是否添加了润滑油，通常用于线性轴。
 16.寿命(lifespan): 轴体寿命，单位为次。
-17.轴体上市时间(release_date): 轴体上市时间，通常为年份。
+17.上市时间(release_date): 轴体上市时间，通常为年份。
 18.备注(remark): 轴体备注信息。
 19.数据来源(data_source): 数据来源，通常为官方数据或用户反馈。
 20.创建时间(create_time): 轴体数据创建时间。

@@ -19,26 +19,10 @@
 		<!-- 轴体信息列表 -->
 		<uni-list class="info-list">
 			<!-- 基本信息 -->
-			<uni-list-item
-				title="轴体名称"
-				:right-text="switchData.name || '暂无'"
-			>
-			</uni-list-item>
-			<uni-list-item
-				title="代工厂"
-				:right-text="switchData.manufacturer || '暂无'"
-			>
-			</uni-list-item>
-			<uni-list-item
-				title="轴体分类"
-				:right-text="switchData.category || '暂无'"
-			>
-			</uni-list-item>
-			<uni-list-item
-				title="上市时间"
-				:right-text="switchData.release_date || '暂无'"
-			>
-			</uni-list-item>
+			<uni-list-item title="轴体名称" :right-text="switchData.switch_name || '暂无'" />
+			<uni-list-item title="代工厂" :right-text="switchData.manufacturer || '暂无'" />
+			<uni-list-item title="轴体分类" :right-text="switchData.switch_type || '暂无'" />
+			<uni-list-item title="上市时间" :right-text="switchData.release_date || '暂无'" />
 			<uni-list-item title="价格" :right-text="getPriceText(switchData.price)" />
 
 			<!-- 规格参数 -->
@@ -46,8 +30,9 @@
 			<uni-list-item title="上盖材质" :right-text="switchData.top_housing_material || '暂无'" />
 			<uni-list-item title="底壳材质" :right-text="switchData.bottom_housing_material || '暂无'" />
 			<uni-list-item title="触发压力" :right-text="getForceText(switchData.actuation_force)" />
-			<uni-list-item title="触发行程" :right-text="getDistanceText(switchData.actuation_distance)" />
+			<uni-list-item title="触发行程" :right-text="getDistanceText(switchData.actuation_travel)" />
 			<uni-list-item title="触底压力" :right-text="getForceText(switchData.bottom_force)" />
+			<uni-list-item title="触底行程" :right-text="getDistanceText(switchData.bottom_out_travel)" />
 			<uni-list-item title="总行程" :right-text="getDistanceText(switchData.total_travel)" />
 			<uni-list-item title="弹簧长度" :right-text="switchData.spring_length || '暂无'" />
 			<uni-list-item title="出厂润滑" :right-text="switchData.factory_lube ? '是' : '否'" />
@@ -56,6 +41,13 @@
 			<!-- 其他信息 -->
 			<uni-list-item title="更新时间" :right-text="formatTime(switchData.update_time)" />
 			<uni-list-item title="数据来源" :right-text="switchData.data_source || '暂无'" />
+			<uni-list-item
+				title="相关键盘"
+				:right-text="getRelatedKeyboards(switchData.related_keyboards)"
+				class="related-keyboards"
+			/>
+			<uni-list-item title="停产" :right-text="switchData.discontinued ? '是' : '否'" />
+			<uni-list-item title="备注" :right-text="switchData.remark || '暂无'" />
 			<uni-list-item title="审核状态" :right-text="switchData.audit_status || '暂无'" />
 		</uni-list>
 	</view>
@@ -120,7 +112,7 @@
 
 					console.log('获取轴体数据结果:', res)
 
-					if (res.result.code === 0) {
+					if (res.result.errCode === 0) {
 						this.switchData = res.result.data
 						// 处理图片数组，只保留有效的 fileID
 						this.switchImages = Array.isArray(this.switchData.images) ?
@@ -128,7 +120,7 @@
 						console.log('加载后的图片数组:', this.switchImages)
 					} else {
 						uni.showToast({
-							title: res.result.msg,
+							title: res.result.errMsg || '加载失败',
 							icon: 'none'
 						})
 					}
@@ -157,8 +149,23 @@
 
 			// 格式化距离 mm
 			getDistanceText(distance) {
+				// 如果值为空，返回暂无数据
 				if (!distance) return '暂无数据'
-				return distance.toString().toLowerCase().includes('mm') ? distance : `${distance}mm`
+
+				const distanceStr = distance.toString().toLowerCase()
+
+				// 如果已经包含 mm，直接返回
+				if (distanceStr.includes('mm')) {
+					return distance
+				}
+
+				// 如果不包含数字，直接返回原值
+				if (!/\d/.test(distanceStr)) {
+					return distance
+				}
+
+				// 包含数字但不包含 mm，添加 mm
+				return `${distance}mm`
 			},
 
 			// 格式化时间
@@ -177,6 +184,14 @@
 					console.error('时间格式化失败:', e)
 					return time
 				}
+			},
+
+			// 处理相关键盘字段的数据
+			getRelatedKeyboards(keyboards) {
+				if (!keyboards || !Array.isArray(keyboards) || keyboards.length === 0) {
+					return '--'
+				}
+				return keyboards.join(', ')
 			},
 		}
 	}
@@ -210,15 +225,44 @@
 		margin-top: 10px;
 
 		:deep(.uni-list-item) {
+			.uni-list-item__container {
+				flex: 1;
+				flex-direction: row;
+				padding: 12px 15px;
+			}
+
+			.uni-list-item__content {
+				flex: none;
+				width: 100px;  // 固定宽度
+			}
+
 			.uni-list-item__content-title {
 				font-size: 14px;
 				color: #666;
+				white-space: nowrap;
+			}
+
+			.uni-list-item__extra {
+				flex: 1;
+				overflow: visible;
+				align-items: flex-start;
 			}
 
 			.uni-list-item__extra-text {
 				font-size: 14px;
 				color: #333;
-				text-align: right;
+				text-align: left;
+				white-space: normal;
+				word-break: break-all;
+				line-height: 1.4;
+				width: 100%;
+			}
+
+			&.related-keyboards {
+				.uni-list-item__extra-text {
+					padding: 8px 0;
+					min-height: 44px;  // 确保有足够的空间显示多行文本
+				}
 			}
 		}
 	}

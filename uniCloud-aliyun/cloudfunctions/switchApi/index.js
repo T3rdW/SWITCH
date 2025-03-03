@@ -28,8 +28,8 @@ exports.main = async (event, context) => {
 				// 验证参数
 				if (!switchId || imageIndex === undefined || !imageInfo) {
 					return {
-						code: -1,
-						msg: '参数错误'
+						errCode: -1,
+						errMsg: '参数错误'
 					};
 				}
 
@@ -39,21 +39,21 @@ exports.main = async (event, context) => {
 				});
 
 				return {
-					code: 0,
-					msg: '更新成功',
+					errCode: 0,
+					errMsg: '更新成功',
 					data: res
 				};
 			} catch (e) {
 				console.error(e);
 				return {
-					code: -1,
-					msg: e.message || '更新失败'
+					errCode: -1,
+					errMsg: e.message || '更新失败'
 				};
 			}
 		default:
 			return {
-				code: -1,
-				msg: '未知操作'
+				errCode: -1,
+				errMsg: '未知操作'
 			}
 	}
 }
@@ -111,7 +111,7 @@ async function searchSwitches(params) {
 
 		// 构建查询条件
 		const query = {
-			name: new RegExp(keyword)
+			switch_name: new RegExp(keyword, 'i')
 		}
 
 		console.log('查询条件:', query)
@@ -137,10 +137,10 @@ async function searchSwitches(params) {
 		})
 
 		return {
-			code: 0,
-			msg: 'success',
+			errCode: 0,
+			errMsg: 'success',
 			data: {
-				list: list.data,
+				data: list.data,
 				total: testCount.total,
 				pageSize,
 				page
@@ -150,8 +150,8 @@ async function searchSwitches(params) {
 	} catch (e) {
 		console.error('搜索轴体失败:', e)
 		return {
-			code: -1,
-			msg: '搜索失败: ' + e.message
+			errCode: -1,
+			errMsg: '搜索失败: ' + e.message
 		}
 	}
 }
@@ -161,8 +161,8 @@ async function getSwitchById(id) {
 	try {
 		if (!id) {
 			return {
-				code: -1,
-				msg: 'ID不能为空'
+				errCode: -1,
+				errMsg: 'ID不能为空'
 			}
 		}
 
@@ -171,21 +171,21 @@ async function getSwitchById(id) {
 
 		if (!res.data || res.data.length === 0) {
 			return {
-				code: -1,
-				msg: '轴体不存在'
+				errCode: -1,
+				errMsg: '轴体不存在'
 			}
 		}
 
 		return {
-			code: 0,
-			msg: 'success',
+			errCode: 0,
+			errMsg: 'success',
 			data: res.data[0]
 		}
 	} catch (e) {
 		console.error('获取轴体详情失败:', e)
 		return {
-			code: -1,
-			msg: '获取详情失败'
+			errCode: -1,
+			errMsg: '获取详情失败'
 		}
 	}
 }
@@ -195,30 +195,31 @@ async function addSwitch(data) {
 	const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
 
 	// 验证图片数据
-	if (!data.preview_image || !data.preview_image.fileID) {
+	if (!data.preview_images || !data.preview_images.length || !data.preview_images[0].fileID) {
 		return {
-			code: -1,
-			msg: '图片数据无效'
+			errCode: -1,
+			errMsg: '图片数据无效'
 		}
 	}
 
 	const switchData = {
 		...data,
 		create_time: now,
-		update_time: now
+		update_time: now,
+		audit_status: '未审核' // 设置默认审核状态
 	}
 
 	try {
 		const res = await collection.add(switchData)
 		return {
-			code: 0,
-			msg: '添加成功',
+			errCode: 0,
+			errMsg: '添加成功',
 			data: res
 		}
 	} catch (e) {
 		return {
-			code: -1,
-			msg: '添加失败',
+			errCode: -1,
+			errMsg: '添加失败',
 			error: e
 		}
 	}
@@ -231,8 +232,8 @@ async function updateSwitch(event) {
 	try {
 		if (!id) {
 			return {
-				code: -1,
-				msg: 'ID不能为空'
+				errCode: -1,
+				errMsg: 'ID不能为空'
 			}
 		}
 
@@ -246,15 +247,15 @@ async function updateSwitch(event) {
 		const res = await collection.doc(id).update(data)
 
 		return {
-			code: 0,
-			msg: '更新成功',
+			errCode: 0,
+			errMsg: '更新成功',
 			data: res
 		}
 	} catch (e) {
 		console.error('更新轴体数据失败:', e)
 		return {
-			code: -1,
-			msg: '更新失败'
+			errCode: -1,
+			errMsg: '更新失败'
 		}
 	}
 }
@@ -264,14 +265,14 @@ async function deleteSwitch(id) {
 	try {
 		const res = await collection.doc(id).remove()
 		return {
-			code: 0,
-			msg: '删除成功',
+			errCode: 0,
+			errMsg: '删除成功',
 			data: res
 		}
 	} catch (e) {
 		return {
-			code: -1,
-			msg: '删除失败',
+			errCode: -1,
+			errMsg: '删除失败',
 			error: e
 		}
 	}
@@ -285,13 +286,13 @@ async function uploadImage(tempFilePath, cloudPath) {
 			cloudPath: cloudPath
 		});
 		return {
-			code: 0,
+			errCode: 0,
 			fileID: uploadResult.fileID
 		};
 	} catch (e) {
 		return {
-			code: -1,
-			msg: '上传失败'
+			errCode: -1,
+			errMsg: '上传失败'
 		};
 	}
 }
