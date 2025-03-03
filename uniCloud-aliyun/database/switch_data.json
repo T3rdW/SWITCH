@@ -126,9 +126,9 @@
 		"audit_status": "未审核"
 	},
 	{
-		"name": "烈焰紫轴V2",
-		"name_en": "Flame Purple V2",
-		"images": [
+		"switch_name": "烈焰紫轴V2",
+		"switch_name_en": "Flame Purple V2",
+		"preview_images": [
 			{
 				"fileName": "Flame_Purple_V2_main_1.webp",
 				"fileID": "",
@@ -168,9 +168,9 @@
 		"audit_status": "未审核"
 	},
 	{
-		"name": "C³Equalz X TKC 香蕉轴",
-		"name_en": "C³Equalz X TKC Banana Switch",
-		"images": [
+		"switch_name": "C³Equalz X TKC 香蕉轴",
+		"switch_name_en": "C³Equalz X TKC Banana Switch",
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -199,7 +199,7 @@
 		"total_travel": "--",
 		"spring_length": "18mm双段弹簧",
 		"price": "5.5",
-		"has_factory_lubricant": true,
+		"factory_lube": true,
 		"lifespan": "3000万次",
 		"release_date": "2021-03",
 		"discontinued": false,
@@ -229,7 +229,7 @@
 			"Keychron Q1",
 			"Tofu60"
 		],
-		"manufacturer": "佳腾(Gateron)",
+		"manufacturer": "佳达隆(Gateron)",
 		"switch_type": "5脚线性轴",
 		"top_housing_material": "PC",
 		"bottom_housing_material": "尼龙",
@@ -630,7 +630,7 @@
 	{
 		"switch_name": "凯华 Box茶轴V2",
 		"switch_name_en": "Kailh Box Brown V2",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -659,7 +659,7 @@
 		"total_travel": "--",
 		"spring_length": "14mm单段弹簧",
 		"price": "2.0",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "8000万次",
 		"release_date": "2020-03",
 		"discontinued": false,
@@ -671,7 +671,7 @@
 	{
 		"switch_name": "凯华 Box黑轴V2",
 		"switch_name_en": "Kailh Box Black V2",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -700,7 +700,7 @@
 		"total_travel": "--",
 		"spring_length": "14mm单段弹簧",
 		"price": "2.0",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "8000万次",
 		"release_date": "2020-03",
 		"discontinued": false,
@@ -712,7 +712,7 @@
 	{
 		"switch_name": "凯华 Box翡翠轴",
 		"switch_name_en": "Kailh Box Jade",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -741,7 +741,7 @@
 		"total_travel": "--",
 		"spring_length": "14mm单段弹簧",
 		"price": "2.2",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "8000万次",
 		"release_date": "2018-06",
 		"discontinued": false,
@@ -753,7 +753,7 @@
 	{
 		"switch_name": "凯华 Box海军轴",
 		"switch_name_en": "Kailh Box Navy",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -778,7 +778,7 @@
 		"total_travel": "--",
 		"spring_length": "14mm单段弹簧",
 		"price": "2.2",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "8000万次",
 		"release_date": "2018-06",
 		"discontinued": false,
@@ -790,7 +790,7 @@
 	{
 		"switch_name": "凯华 奶油轴",
 		"switch_name_en": "Kailh Cream",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -815,7 +815,7 @@
 		"total_travel": "--",
 		"spring_length": "15mm双段弹簧",
 		"price": "5.5",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "7000万次",
 		"release_date": "2019-01",
 		"discontinued": false,
@@ -827,7 +827,7 @@
 	{
 		"switch_name": "凯华 速银轴",
 		"switch_name_en": "Kailh Speed Silver",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -852,7 +852,7 @@
 		"total_travel": "--",
 		"spring_length": "15mm单段弹簧",
 		"price": "2.0",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "7000万次",
 		"release_date": "2017-05",
 		"discontinued": false,
@@ -864,7 +864,7 @@
 	{
 		"switch_name": "凯华 Box粉轴V2",
 		"switch_name_en": "Kailh Box Pink V2",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -889,7 +889,7 @@
 		"total_travel": "--",
 		"spring_length": "14mm单段弹簧",
 		"price": "2.0",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "8000万次",
 		"release_date": "2020-03",
 		"discontinued": false,
@@ -901,7 +901,7 @@
 	{
 		"switch_name": "凯华 Box黄轴V2",
 		"switch_name_en": "Kailh Box Yellow V2",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -926,7 +926,7 @@
 		"total_travel": "--",
 		"spring_length": "14mm单段弹簧",
 		"price": "2.0",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "8000万次",
 		"release_date": "2020-03",
 		"discontinued": false,
@@ -938,7 +938,7 @@
 	{
 		"switch_name": "凯华 速铜轴",
 		"switch_name_en": "Kailh Speed Copper",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -963,7 +963,7 @@
 		"total_travel": "--",
 		"spring_length": "15mm单段弹簧",
 		"price": "2.0",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "7000万次",
 		"release_date": "2017-05",
 		"discontinued": false,
@@ -975,7 +975,7 @@
 	{
 		"switch_name": "凯华 速金轴",
 		"switch_name_en": "Kailh Speed Gold",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -1000,7 +1000,7 @@
 		"total_travel": "--",
 		"spring_length": "15mm单段弹簧",
 		"price": "2.0",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "7000万次",
 		"release_date": "2017-05",
 		"discontinued": false,
@@ -1012,7 +1012,7 @@
 	{
 		"switch_name": "凯华 Box水晶轴",
 		"switch_name_en": "Kailh Box Crystal",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -1037,7 +1037,7 @@
 		"total_travel": "--",
 		"spring_length": "14mm单段弹簧",
 		"price": "3.5",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "8000万次",
 		"release_date": "2021-06",
 		"discontinued": false,
@@ -1049,7 +1049,7 @@
 	{
 		"switch_name": "凯华 Box水晶Pro轴",
 		"switch_name_en": "Kailh Box Crystal Pro",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -1074,7 +1074,7 @@
 		"total_travel": "--",
 		"spring_length": "14mm双段弹簧",
 		"price": "4.0",
-		"has_factory_lubricant": true,
+		"factory_lube": true,
 		"lifespan": "8000万次",
 		"release_date": "2022-03",
 		"discontinued": false,
@@ -1086,7 +1086,7 @@
 	{
 		"switch_name": "凯华 Box皇轴",
 		"switch_name_en": "Kailh Box Royal",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -1111,7 +1111,7 @@
 		"total_travel": "--",
 		"spring_length": "14mm单段弹簧",
 		"price": "3.0",
-		"has_factory_lubricant": false,
+		"factory_lube": false,
 		"lifespan": "8000万次",
 		"release_date": "2018-05",
 		"discontinued": false,
@@ -1123,7 +1123,7 @@
 	{
 		"switch_name": "凯华 Box静音茶轴",
 		"switch_name_en": "Kailh Box Silent Brown",
-		"images": [
+		"preview_images": [
 			{
 				"fileName": "default_switch.webp",
 				"fileID": "",
@@ -1148,7 +1148,7 @@
 		"total_travel": "--",
 		"spring_length": "14mm单段弹簧",
 		"price": "3.0",
-		"has_factory_lubricant": true,
+		"factory_lube": true,
 		"lifespan": "8000万次",
 		"release_date": "2019-08",
 		"discontinued": false,

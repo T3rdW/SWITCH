@@ -37,14 +37,14 @@
 		</view>
 
 		<!-- 搜索结果列表 -->
-		<view class="search-result" v-if="searchList.length > 0">
+		<view class="search-result" v-if="switchList.length > 0">
 			<uni-list>
 				<uni-list-item
-					v-for="item in searchList"
+					v-for="item in switchList"
 					:key="item._id"
 					clickable
 					@tap="handleItemClick(item)"
-					:title="item.name"
+					:title="item.switch_name"
 					:note="getSpecText(item)"
 					:rightText="getPriceText(item)"
 					:border="true"
@@ -67,7 +67,7 @@
 		data() {
 			return {
 				searchKeyword: '', // 搜索关键词
-				searchList: [], // 搜索结果列表
+				switchList: [], // 搜索结果列表
 				searchHistory: [], // 搜索历史
 				hasSearch: false, // 是否已执行搜索
 				showHistory: false, // 是否显示搜索历史
@@ -125,48 +125,21 @@
 
 				try {
 					console.log('开始搜索:', keyword)
-					// 调用云函数搜索
-					const res = await uniCloud.callFunction({
-						name: 'switchApi',
-						data: {
-							action: 'search',
-							params: {
-								keyword: keyword,
-								page: 1,
-								pageSize: 20
-							}
-						}
-					})
+					const db = uniCloud.database()
+					const res = await db.collection('switches')
+						.where({ switch_name: new RegExp(keyword, 'i') })
+						.get()
 
-					// 详细打印搜索结果
-					console.log('搜索详细信息:', {
-						keyword,
-						result: res.result,
-						code: res.result.code,
-						total: res.result.data?.total,
-						listLength: res.result.data?.list?.length,
-						firstItem: res.result.data?.list?.[0]
-					})
-
-					if (res.result.code === 0) {
-						this.searchList = res.result.data.list
-						this.hasSearch = true
-						if (this.searchList.length === 0) {
-							console.log('搜索成功但无结果:', keyword)
-						} else {
-							console.log('搜索成功, 找到记录数:', this.searchList.length)
-						}
-
-						// 保存搜索历史
-						this.saveSearchHistory(keyword)
+					this.switchList = res.data
+					this.hasSearch = true
+					if (this.switchList.length === 0) {
+						console.log('搜索成功但无结果:', keyword)
 					} else {
-						console.warn('搜索返回错误:', res.result.msg)
-						uni.showToast({
-							title: res.result.msg,
-							icon: 'none'
-						})
+						console.log('搜索成功, 找到记录数:', this.switchList.length)
 					}
 
+					// 保存搜索历史
+					this.saveSearchHistory(keyword)
 				} catch (e) {
 					console.error('搜索失败:', e)
 					uni.showToast({
@@ -177,7 +150,7 @@
 					uni.hideLoading()
 					console.log('搜索完成, 当前状态:', {
 						hasSearch: this.hasSearch,
-						resultCount: this.searchList.length,
+						resultCount: this.switchList.length,
 						keyword: keyword
 					})
 				}
@@ -187,10 +160,10 @@
 			handleClear() {
 				console.log('清除搜索:', {
 					oldKeyword: this.searchKeyword,
-					oldResultCount: this.searchList.length
+					oldResultCount: this.switchList.length
 				})
 				this.searchKeyword = ''
-				this.searchList = []
+				this.switchList = []
 				this.hasSearch = false
 				this.showHistory = true
 				console.log('搜索已清除')
@@ -274,8 +247,8 @@
 			// 获取缩略图
 			getThumbImage(item) {
 				// 检查是否有图片数组且第一张图片有效
-				if (Array.isArray(item.images) && item.images.length > 0 && item.images[0].fileID) {
-					return item.images[0].fileID
+				if (Array.isArray(item.preview_images) && item.preview_images.length > 0 && item.preview_images[0].fileID) {
+					return item.preview_images[0].fileID
 				}
 				// 返回默认图片
 				return '/static/default_switch.webp'
