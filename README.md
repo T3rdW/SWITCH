@@ -31,6 +31,33 @@
 5.对数据库一些返回非正常信息的错误进行处理或调试
 6.对数据库的读写操作进行优化,减少数据库读写操作次数来达到最优的效果
 
+数据库字段:
+1.名称(switch_name): 轴体名称，通常为品牌名称。
+2.英文名称(switch_name_en): 轴体英文名称，通常为品牌名称。
+3.预览图片(preview_images): 轴体预览图片，通常为图片数组。
+4.代工厂(manufacturer): 轴体制造商，通常为品牌名称。
+5.轴芯材质(stem_material): 轴芯常用材料包括POM（自润滑尼龙）、改性塑料或透明PC（透光用）。
+5.上盖材质(top_housing_material): 上盖材质通常为PC（透光用）、尼龙或POM。
+6.底壳材质(bottom_housing_material): 底壳材质通常为尼龙或POM。
+7.触发压力(actuation_force): 轴芯从初始位置到触发点的压力，单位为克力（gf）。示例：Cherry MX红轴触发压力45gf
+8.触发行程(actuation_travel): 轴芯从初始位置到触发点的位移距离，单位毫米（mm）。示例：银轴触发行程1.2mm
+9.触底压力(bottom_force): 轴芯从初始位置到完全触底（底部撞击）的压力，单位为克力（gf）。示例：Cherry MX红轴触底压力60gf
+10.触底行程(bottom_out_travel): 轴芯从初始位置到完全触底（底部撞击）的位移距离，单位毫米（mm）。示例：Cherry MX红轴触底行程4mm
+11.总行程(total_travel): 轴芯从初始位置到触底的总移动距离，包含触发行程和后续行程。示例：银轴总行程3.4mm
+12.弹簧长度(spring_length): 弹簧长度，通常为毫米（mm）。
+13.价位(price): 轴体价格，单位为元。
+14.轴体类型(switch_type): 按结构分为线性轴（Linear）、段落轴（Tactile）、有声段落轴（Clicky）。
+15.有无厂润(factory_lube): 是否添加了润滑油，通常用于线性轴。
+16.寿命(lifespan): 轴体寿命，单位为次。
+17.轴体上市时间(release_date): 轴体上市时间，通常为年份。
+18.备注(remark): 轴体备注信息。
+19.数据来源(data_source): 数据来源，通常为官方数据或用户反馈。
+20.创建时间(create_time): 轴体数据创建时间。
+21.更新时间(update_time): 轴体数据更新时间。
+22.审核状态(audit_status): 轴体数据审核状态，通常为未审核、审核中或已审核。
+23.相关键盘(related_keyboards): 与轴体相关的键盘型号数组。
+24.停产(discontinued): 轴体是否停产，通常为true或false。
+
 规则:
 1.文件命名规则改为：轴体名称_图片类型_序号.webp
 例如：Hyacinth_V2U_main_1.webp
