@@ -52,3 +52,41 @@
   padding-left: 15px;
   padding-right: 15px;
 }
+.image-manage-trigger {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  z-index: 100;
+  border: 1px solid rgba(255, 0, 0, 0.3);
+}
+.image-manage-trigger .manage-buttons {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 0 10px;
+}
+.image-manage-trigger .manage-buttons .btn {
+  margin: 8px 0;
+  padding: 5px 10px;
+  font-size: 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 100%;
+  min-width: 80px;
+}
+.image-manage-trigger .manage-buttons .btn.delete {
+  background-color: #f44336;
+}
+.image-manage-trigger .manage-buttons .btn:active {
+  opacity: 0.8;
+}
+.image-manage-trigger:active {
+  background-color: rgba(255, 0, 0, 0.1);
+}

@@ -34,7 +34,8 @@
 #数据库字段:
 1.名称(switch_name): 轴体名称，通常为品牌名称。
 2.英文名称(switch_name_en): 轴体英文名称，通常为品牌名称。
-3.预览图片(preview_images): 轴体预览图片，通常为图片数组。
+3.预览图片(preview_images): 轴体预览图片，通常为图片数组。(fileID：云存储文件ID type：图片类型 fileName：文件名 uploadTime：上传时间
+updateTime：更新时间（仅修改时有）)
 4.代工厂(manufacturer): 轴体制造商，通常为品牌名称。[凯华(Kailh);旭华(Bsun);TTC(正牌科电);KKT(康腾特);汇木鑫(HMX);力驰;Cherry;佳达隆(Gateron);阿米洛(Armiro);高特(Outemu);冠泰(Greetech);键极客(JJK);华诺(Huano);雷蛇(Razer);雷柏(Rapoo);京造(Keychron);华硕(ROG);达尔优(Dareu);黑峡谷(Hyeku);樱桃(Cherry)]
 5.轴芯材质(stem_material): 轴芯常用材料包括POM（自润滑尼龙）、改性塑料或透明PC（透光用）。
 5.上盖材质(top_housing_material): 上盖材质通常为PC（透光用）、尼龙或POM。
@@ -60,7 +61,7 @@
 25.用户OPENID(user_open_id): 用户OPENID。
 
 规则:
-1.文件命名规则改为：轴体名称_图片类型_序号.webp
+1.图片文件命名规则改为：轴体名称(switch_name_en或witch_name)_图片类型_序号.webp
 例如：Hyacinth_V2U_main_1.webp
 或：Hyacinth_V2U_detail_2.webp
 

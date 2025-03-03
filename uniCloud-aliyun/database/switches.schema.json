@@ -21,21 +21,35 @@
             "description": "轴体英文名称",
             "title": "英文名称"
         },
-        "preview_images": {
+        "images": {
             "bsonType": "array",
-            "description": "轴体预览图片",
+            "description": "轴体图片数组",
             "items": {
                 "bsonType": "object",
+                "required": ["fileID", "type", "fileName", "uploadTime"],
                 "properties": {
-                    "fileName": {
-                        "bsonType": "string"
-                    },
                     "fileID": {
-                        "bsonType": "string"
+                        "bsonType": "string",
+                        "description": "云存储文件ID"
                     },
                     "type": {
                         "bsonType": "string",
+                        "description": "图片类型",
                         "enum": ["main", "detail"]
+                    },
+                    "fileName": {
+                        "bsonType": "string",
+                        "description": "文件名"
+                    },
+                    "uploadTime": {
+                        "bsonType": "string",
+                        "description": "上传时间",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$"
+                    },
+                    "updateTime": {
+                        "bsonType": "string",
+                        "description": "更新时间",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$"
                     }
                 }
             }

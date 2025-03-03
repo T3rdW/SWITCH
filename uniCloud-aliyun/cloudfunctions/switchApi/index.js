@@ -22,34 +22,7 @@ exports.main = async (event, context) => {
 		case 'uploadImage':
 			return await uploadImage(event.tempFilePath, event.cloudPath)
 		case 'updateSwitchImage':
-			try {
-				const { switchId, imageIndex, imageInfo } = event;
-
-				// 验证参数
-				if (!switchId || imageIndex === undefined || !imageInfo) {
-					return {
-						errCode: -1,
-						errMsg: '参数错误'
-					};
-				}
-
-				// 更新数据库
-				const res = await db.collection('switches').doc(switchId).update({
-					[`images.${imageIndex}`]: imageInfo
-				});
-
-				return {
-					errCode: 0,
-					errMsg: '更新成功',
-					data: res
-				};
-			} catch (e) {
-				console.error(e);
-				return {
-					errCode: -1,
-					errMsg: e.message || '更新失败'
-				};
-			}
+			return await updateSwitchImage(event)
 		default:
 			return {
 				errCode: -1,
@@ -294,5 +267,111 @@ async function uploadImage(tempFilePath, cloudPath) {
 			errCode: -1,
 			errMsg: '上传失败'
 		};
+	}
+}
+
+// 更新轴体图片
+async function updateSwitchImage(event) {
+	try {
+		const { switchId, imageIndex, imageInfo } = event;
+		console.log('接收到的参数:', { switchId, imageIndex, imageInfo });
+
+		// 验证参数
+		if (!switchId || imageIndex === undefined || !imageInfo) {
+			console.error('参数验证失败:', { switchId, imageIndex, imageInfo });
+			return {
+				errCode: -1,
+				errMsg: '参数错误'
+			}
+		}
+
+		// 验证 fileID
+		if (!imageInfo.fileID) {
+			console.error('fileID 为空');
+			return {
+				errCode: -1,
+				errMsg: '图片 fileID 不能为空'
+			}
+		}
+
+		// 获取当前轴体数据
+		const switchData = await collection.doc(switchId).get();
+		console.log('查询到的轴体数据:', switchData);
+
+		if (!switchData.data || !switchData.data[0]) {
+			console.error('未找到轴体数据');
+			return {
+				errCode: -1,
+				errMsg: '未找到轴体数据'
+			}
+		}
+
+		// 确保 preview_images 是一个数组
+		let previewImages = Array.isArray(switchData.data[0].preview_images) ?
+			switchData.data[0].preview_images : [];
+
+		// 如果 preview_images 为 null 或 undefined，初始化为空数组
+		if (!previewImages) {
+			previewImages = [];
+		}
+
+		console.log('当前图片数组:', previewImages);
+
+		// 验证图片信息的完整性
+		if (!imageInfo.uploadTime || !imageInfo.fileName || !imageInfo.type) {
+			console.error('图片信息不完整:', imageInfo);
+			return {
+				errCode: -1,
+				errMsg: '图片信息不完整'
+			}
+		}
+
+		// 更新或添加图片信息
+		if (imageIndex < previewImages.length) {
+			// 更新现有图片
+			previewImages[imageIndex] = imageInfo;
+		} else {
+			// 添加新图片
+			previewImages.push(imageInfo);
+		}
+
+		console.log('更新后的图片数组:', previewImages);
+
+		// 更新数据库
+		const updateData = {
+			preview_images: previewImages.map(img => ({
+				fileID: img.fileID,
+				type: img.type,
+				fileName: img.fileName,
+				uploadTime: img.uploadTime,
+				updateTime: img.updateTime || ''
+			})),
+			update_time: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+		};
+		console.log('准备更新的数据:', updateData);
+
+		const res = await collection.doc(switchId).update(updateData);
+		console.log('数据库更新结果:', res);
+
+		if (!res.updated) {
+			console.error('数据库更新失败');
+			return {
+				errCode: -1,
+				errMsg: '数据库更新失败'
+			}
+		}
+
+		return {
+			errCode: 0,
+			errMsg: '更新成功',
+			data: res
+		}
+	} catch (e) {
+		console.error('更新轴体图片失败:', e);
+		return {
+			errCode: -1,
+			errMsg: '更新失败: ' + e.message,
+			error: e
+		}
 	}
 }
