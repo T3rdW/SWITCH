@@ -1,11 +1,12 @@
 'use strict';
 const db = uniCloud.database()
 const collection = db.collection('switches')
+const fs = require('fs')
 
 exports.main = async (event, context) => {
-	const action = event.action
+	console.log('event : ', event)
 
-	switch (action) {
+	switch (event.action) {
 		case 'search':
 			return await searchSwitches(event.params)
 		case 'getSwitchById':
@@ -23,6 +24,85 @@ exports.main = async (event, context) => {
 			return await uploadImage(event.tempFilePath, event.cloudPath)
 		case 'updateSwitchImage':
 			return await updateSwitchImage(event)
+		case 'deleteCloudFile':
+			return await deleteCloudFile(event)
+		case 'deleteSwitchImage': {
+			const { switchId, imageIndex, fileID } = event
+			console.log('删除图片参数:', { switchId, imageIndex, fileID });
+
+			// 参数验证
+			if (!switchId || imageIndex === undefined || !fileID) {
+				return {
+					errCode: 1,
+					errMsg: '参数不完整'
+				}
+			}
+
+			try {
+				// 1. 删除云存储中的文件
+				await uniCloud.deleteFile({
+					fileList: [fileID]
+				})
+
+				// 2. 更新数据库中的图片数组
+				// 先获取当前数据
+				const switchData = await collection.doc(switchId).get();
+				console.log('获取到的轴体数据:', switchData.data[0]);
+
+				if (!switchData.data || !switchData.data[0]) {
+					throw new Error('未找到轴体数据');
+				}
+
+				// 获取当前图片数组
+				let previewImages = switchData.data[0].preview_images || [];
+
+				// 验证索引是否有效
+				if (imageIndex < 0 || imageIndex >= previewImages.length) {
+					throw new Error('无效的图片索引');
+				}
+
+				// 验证要删除的图片是否匹配
+				if (previewImages[imageIndex].fileID !== fileID) {
+					throw new Error('图片信息不匹配');
+				}
+
+				console.log('删除前的图片数组:', previewImages);
+
+				// 移除指定索引的图片
+				previewImages.splice(imageIndex, 1);
+				console.log('删除后的图片数组:', previewImages);
+
+				// 更新数据库
+				const res = await collection.doc(switchId).update({
+					preview_images: previewImages,
+					update_time: new Date().toISOString(),
+					updated_by: context.OPENID || 'system', // 记录操作者
+					updated_at: Date.now() // 使用时间戳
+				});
+
+				return {
+					errCode: 0,
+					errMsg: '删除成功',
+					data: {
+						updated: res.updated,
+						modifiedCount: res.modifiedCount,
+						imageCount: previewImages.length,
+						timestamp: Date.now()
+					}
+				}
+			} catch (e) {
+				console.error('删除图片失败:', e);
+				return {
+					errCode: 1,
+					errMsg: e.message || '删除图片失败',
+					error: {
+						type: e.name,
+						message: e.message,
+						stack: process.env.NODE_ENV === 'development' ? e.stack : undefined
+					}
+				}
+			}
+		}
 		default:
 			return {
 				errCode: -1,
@@ -346,7 +426,7 @@ async function updateSwitchImage(event) {
 				uploadTime: img.uploadTime,
 				updateTime: img.updateTime || ''
 			})),
-			update_time: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
+			update_time: new Date().toISOString()
 		};
 		console.log('准备更新的数据:', updateData);
 
@@ -372,6 +452,38 @@ async function updateSwitchImage(event) {
 			errCode: -1,
 			errMsg: '更新失败: ' + e.message,
 			error: e
+		}
+	}
+}
+
+// 删除云存储文件
+async function deleteCloudFile(event) {
+	try {
+		const { fileList } = event;
+
+		if (!fileList || !Array.isArray(fileList) || fileList.length === 0) {
+			return {
+				errCode: -1,
+				errMsg: '文件列表不能为空'
+			}
+		}
+
+		const result = await uniCloud.deleteFile({
+			fileList: fileList
+		});
+
+		console.log('删除文件结果:', result);
+
+		return {
+			errCode: 0,
+			errMsg: '删除成功',
+			data: result
+		}
+	} catch (e) {
+		console.error('删除文件失败:', e);
+		return {
+			errCode: -1,
+			errMsg: '删除失败: ' + e.message
 		}
 	}
 }

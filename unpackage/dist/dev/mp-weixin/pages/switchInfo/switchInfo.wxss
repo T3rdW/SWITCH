@@ -14,7 +14,37 @@
   align-items: center;
   background-color: #fff;
 }
-.swiper .swiper-item .switch-image {
+.swiper .swiper-item .image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.swiper .swiper-item .image-wrapper .image-type-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.swiper .swiper-item .image-wrapper .image-type-tag:active {
+  opacity: 0.8;
+}
+.swiper .swiper-item .image-wrapper .image-type-tag .edit-icon {
+  font-size: 12px;
+  margin-left: 4px;
+}
+.swiper .swiper-item .image-wrapper .switch-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -120,6 +150,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.edit-overlay .edit-container .edit-image-container .type-selector {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+}
+.edit-overlay .edit-container .edit-image-container .type-selector .picker-content {
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 50px;
+  height: 18px;
+  justify-content: center;
+}
+.edit-overlay .edit-container .edit-image-container .type-selector:active {
+  opacity: 0.8;
+}
+.edit-overlay .edit-container .edit-image-container .type-selector .picker-arrow {
+  font-size: 12px;
+  margin-left: 4px;
+  color: #fff;
 }
 .edit-overlay .edit-container .edit-image-container .nav-btn {
   position: absolute;

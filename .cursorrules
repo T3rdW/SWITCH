@@ -26,6 +26,10 @@
 每个HTML结构和CSS样式都要添加详细的中文注释。
 确保代码符合W3C标准规范。
 优化图片和媒体资源的加载。
+message不再推荐使用，请使用errMsg替代
+code不再推荐使用，请使用errCode替代
+affectedDocs不再推荐使用，请使用inserted/deleted/updated/data.length替代
+使用微信小程序最新的系统API,避免使用即将废弃的API,符合微信小程序的最新规范
 
 ###解决问题时：
 -全面阅读相关VUE和JS文件，理解页面结构和样式。

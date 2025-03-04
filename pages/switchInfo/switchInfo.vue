@@ -8,6 +8,20 @@
 					<text class="close-btn" @tap="isEditing = false">×</text>
 				</view>
 				<view class="edit-image-container">
+					<view class="type-selector" v-if="currentImage.fileID">
+						<picker
+							mode="selector"
+							:range="imageTypeOptions"
+							range-key="text"
+							:value="getTypeIndex(currentImage.type)"
+							@change="handleTypeChange"
+						>
+							<view class="picker-content">
+								<text>{{ currentImage.type ? getImageTypeText(currentImage.type) : '选择类型' }}</text>
+								<text class="picker-arrow">▼</text>
+							</view>
+						</picker>
+					</view>
 					<view class="nav-btn prev" @tap="handlePrevImage" v-if="switchImages.length > 1">
 						<text class="nav-icon">‹</text>
 					</view>
@@ -26,7 +40,7 @@
 				</view>
 				<view class="edit-buttons">
 					<view class="btn-row">
-						<button class="btn add" @tap="handleAddAndClose">添加图片</button>
+						<button class="btn add" @tap="handleAddImage">添加图片</button>
 						<button class="btn" @tap="handleEditConfirm" v-if="switchImages.length">更换图片</button>
 					</view>
 					<view class="btn-row">
@@ -53,17 +67,18 @@
 		<!-- 图片轮播 -->
 		<swiper class="swiper" circular :indicator-dots="true" :autoplay="!isEditing" :interval="3000" :duration="1000" @change="handleSwiperChange">
 			<swiper-item v-for="(image, index) in switchImages" :key="index" class="swiper-item">
-				<image
-					:src="image.fileID ? image.fileID : '/static/default_switch.webp'"
-					mode="aspectFit"
-					class="switch-image"
-					@error="handleImageError(index)"
-					@load="handleImageLoad(index)"
-				/>
-			</swiper-item>
-			<!-- 无图片时显示默认图片 -->
-			<swiper-item v-if="!switchImages.length" class="swiper-item">
-				<image src="/static/default_switch.webp" mode="aspectFit" class="switch-image" />
+				<view class="image-wrapper">
+					<image
+						:src="image.fileID ? image.fileID : '/static/default_switch.webp'"
+						mode="aspectFit"
+						class="switch-image"
+						@error="handleImageError(index)"
+						@load="handleImageLoad(index)"
+					/>
+					<view class="image-type-tag" v-if="image.type">
+						{{ getImageTypeText(image.type) }}
+					</view>
+				</view>
 			</swiper-item>
 		</swiper>
 
@@ -118,6 +133,17 @@
 				triggerCount: 0, // 触发计数器
 				currentImageIndex: 0, // 当前显示的图片索引
 				isEditing: false, // 是否正在编辑图片
+				isLoading: false, // 是否正在加载数据
+				imageTypeOptions: [
+					{ text: '详情图', value: 'detail' },
+					{ text: '上盖图', value: 'top' },
+					{ text: '轴心图', value: 'stem' },
+					{ text: '弹簧图', value: 'spring' },
+					{ text: '底壳图', value: 'bottom' },
+					{ text: '侧图', value: 'side' },
+					{ text: '外壳图', value: 'housing' },
+					{ text: '其他视图', value: 'other' }
+				],
 				MAX_WIDTH: 1280,
 				MAX_HEIGHT: 1280,
 				QUALITY: 0.8
@@ -131,11 +157,20 @@
 		},
 
 		onLoad(options) {
-			console.log('页面参数:', options)
+			console.log('详情页面加载, 参数:', options)
 			// 监听数据传递事件
 			uni.$on('switchData', this.handleSwitchData)
+
+			// 如果没有立即收到数据，可以使用 ID 加载
 			if (options.id) {
-				this.loadSwitchData(options.id)
+				console.log('准备使用 ID 加载数据:', options.id)
+				// 给事件监听一些时间来接收数据
+				setTimeout(() => {
+					if (!this.switchData._id) {
+						console.log('未收到数据，从服务器加载')
+						this.loadSwitchDataById(options.id)
+					}
+				}, 200)
 			}
 		},
 
@@ -147,54 +182,59 @@
 		methods: {
 			// 处理图片加载成功
 			handleImageLoad(index) {
-				console.log('图片加载成功:', index, this.switchImages[index]);
+				console.log('图片加载成功:', index, {
+					fileID: this.switchImages[index].fileID,
+					type: this.switchImages[index].type
+				});
 			},
 
 			// 处理传递来的轴体数据
 			handleSwitchData(data) {
 				console.log('接收到轴体数据:', data)
+				// 打印完整的图片数组信息
+				console.log('原始 preview_images:', data.preview_images)
+
+				// 如果已经有相同的数据，不需要重新设置
+				if (this.switchData._id === data._id) {
+					console.log('已有相同数据，跳过更新');
+					return;
+				}
+
 				this.switchData = data
 				// 处理图片数组，只保留有效的 fileID
-				this.switchImages = Array.isArray(data.preview_images) ? data.preview_images : []
-				console.log('处理后的图片数组:', this.switchImages)
-			},
-
-			// 加载轴体数据
-			async loadSwitchData(id) {
-				try {
-					uni.showLoading({
-						title: '加载中...'
-					})
-
-					const res = await uniCloud.callFunction({
-						name: 'switchApi',
-						data: {
-							action: 'getSwitchById',
-							id: id
+				if (Array.isArray(data.preview_images)) {
+					// 如果图片数据无效，使用默认图片
+					this.switchImages = data.preview_images.map(img => {
+						if (!img || !img.fileID) {
+							console.log('发现无效图片数据，使用默认图片:', img);
+							return {
+								fileID: '/static/default_switch.webp',
+								type: 'detail',
+								fileName: 'default_switch.webp',
+								uploadTime: '',
+								updateTime: ''
+							};
 						}
-					})
+						return img;
+					});
+					console.log('处理后的图片数组:', this.switchImages);
+				} else {
+					console.log('preview_images 不是数组:', data.preview_images);
+					// 如果没有图片数组，使用默认图片
+					this.switchImages = [{
+						fileID: '/static/default_switch.webp',
+						type: 'detail',
+						fileName: 'default_switch.webp',
+						uploadTime: '',
+						updateTime: ''
+					}];
+				}
 
-					console.log('获取轴体数据结果:', res)
-
-					if (res.result.errCode === 0) {
-						this.switchData = res.result.data
-						// 处理图片数组，只保留有效的 fileID
-						this.switchImages = Array.isArray(this.switchData.preview_images) ? this.switchData.preview_images : []
-						console.log('加载后的图片数组:', this.switchImages)
-					} else {
-						uni.showToast({
-							title: res.result.errMsg || '加载失败',
-							icon: 'none'
-						})
-					}
-				} catch (e) {
-					console.error('加载轴体数据失败:', e)
-					uni.showToast({
-						title: '加载失败',
-						icon: 'none'
-					})
-				} finally {
-					uni.hideLoading()
+				// 更新页面标题为轴体名称
+				if (data.switch_name) {
+					wx.setNavigationBarTitle({
+						title: data.switch_name
+					});
 				}
 			},
 
@@ -231,18 +271,27 @@
 				return `${distance}mm`
 			},
 
+			// 获取北京时间的 ISO 格式字符串
+			getBeiJingISOString() {
+				const now = new Date();
+				// 转换为北京时间
+				const beijingDate = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+				return beijingDate.toISOString().slice(0, 19).replace('Z', '');
+			},
+
 			// 格式化时间
 			formatTime(time) {
 				if (!time) return '暂无数据'
 				try {
+					// 如果时间已经是 ISO 格式，直接格式化显示
+					if (time.includes('T')) {
+						return time.replace('T', ' ').slice(0, 19)
+					}
+					// 否则尝试转换为 ISO 格式
 					const date = new Date(time)
-					const year = date.getFullYear()
-					const month = String(date.getMonth() + 1).padStart(2, '0')
-					const day = String(date.getDate()).padStart(2, '0')
-					const hours = String(date.getHours()).padStart(2, '0')
-					const minutes = String(date.getMinutes()).padStart(2, '0')
-					const seconds = String(date.getSeconds()).padStart(2, '0')
-					return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+					// 转换为北京时间
+					const beijingDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+					return beijingDate.toISOString().slice(0, 19).replace('Z', '')
 				} catch (e) {
 					console.error('时间格式化失败:', e)
 					return time
@@ -267,146 +316,234 @@
 				try {
 					console.log('开始压缩图片:', tempFilePath);
 
+					// 检查图片格式
+					const ext = tempFilePath.split('.').pop().toLowerCase();
+					console.log('图片格式:', ext);
+
+					// 获取文件系统管理器
+					const fs = wx.getFileSystemManager();
+
 					// 先获取图片信息
 					const imageInfo = await new Promise((resolve, reject) => {
-						uni.getImageInfo({
+						wx.getImageInfo({
 							src: tempFilePath,
 							success: resolve,
 							fail: reject
 						});
 					});
+					console.log('原始图片信息:', imageInfo);
 
-					console.log('获取到图片信息:', imageInfo);
-
-					// 检查图片信息是否有效
-					if (!imageInfo || !imageInfo.width || !imageInfo.height) {
-						throw new Error('获取图片信息失败');
-					}
+					// 获取原始图片大小
+					const originalFileInfo = await new Promise((resolve, reject) => {
+						fs.getFileInfo({
+							filePath: tempFilePath,
+							success: resolve,
+							fail: reject
+						});
+					});
+					const originalSize = (originalFileInfo.size / 1024).toFixed(2);
+					console.log(`原始图片大小: ${originalSize}KB, 尺寸: ${imageInfo.width}x${imageInfo.height}`);
 
 					// 计算压缩后的尺寸
-					let width = imageInfo.width;
-					let height = imageInfo.height;
+					let targetWidth = imageInfo.width;
+					let targetHeight = imageInfo.height;
+					const maxSize = 1280; // 设置最大边长为1280px
+					const quality = 50; // 降低质量以减小文件大小
 
-					if (width > this.MAX_WIDTH) {
-						height = Math.round((height * this.MAX_WIDTH) / width);
-						width = this.MAX_WIDTH;
+					// 等比例缩放
+					if (targetWidth > targetHeight && targetWidth > maxSize) {
+						targetHeight = Math.round((targetHeight * maxSize) / targetWidth);
+						targetWidth = maxSize;
+					} else if (targetHeight > targetWidth && targetHeight > maxSize) {
+						targetWidth = Math.round((targetWidth * maxSize) / targetHeight);
+						targetHeight = maxSize;
 					}
 
-					if (height > this.MAX_HEIGHT) {
-						width = Math.round((width * this.MAX_HEIGHT) / height);
-						height = this.MAX_HEIGHT;
-					}
+					console.log('计算后的尺寸:', { width: targetWidth, height: targetHeight });
 
-					console.log('计算后的尺寸:', { width, height });
-
-					// 在微信小程序环境中，直接使用压缩API
-					if (uni.getSystemInfoSync().platform === 'mp-weixin') {
-						const compressRes = await new Promise((resolve, reject) => {
-							uni.compressImage({
-								src: tempFilePath,
-								quality: Math.round(this.QUALITY * 100),
-								success: resolve,
-								fail: reject
-							});
-						});
-
-						console.log('压缩结果:', compressRes);
-						return compressRes.tempFilePath;
-					}
-
-					// 压缩图片
+					// 使用微信小程序的压缩API
 					const compressedPath = await new Promise((resolve, reject) => {
-						uni.compressImage({
+						wx.compressImage({
 							src: tempFilePath,
-							quality: Math.round(this.QUALITY * 100),
-							width: width,
-							height: height,
+							quality: quality,
+							compressedWidth: targetWidth,
+							compressHeight: targetHeight,
 							success: resolve,
 							fail: reject
 						});
 					});
 
-					console.log('压缩完成:', compressedPath);
+					// 获取压缩后的图片信息
+					const compressedInfo = await new Promise((resolve, reject) => {
+						wx.getImageInfo({
+							src: compressedPath.tempFilePath,
+							success: resolve,
+							fail: reject
+						});
+					});
+
+					// 获取压缩后的文件大小
+					const finalFileInfo = await new Promise((resolve, reject) => {
+						fs.getFileInfo({
+							filePath: compressedPath.tempFilePath,
+							success: resolve,
+							fail: reject
+						});
+					});
+
+					const compressedSize = (finalFileInfo.size / 1024).toFixed(2);
+					console.log(`压缩完成:
+						原始大小: ${originalSize}KB (${imageInfo.width}x${imageInfo.height})
+						压缩后大小: ${compressedSize}KB (${compressedInfo.width}x${compressedInfo.height})
+						压缩率: ${((1 - finalFileInfo.size / originalFileInfo.size) * 100).toFixed(2)}%
+					`);
+
 					return compressedPath.tempFilePath;
 				} catch (e) {
 					console.error('压缩图片失败:', e);
-					// 如果压缩失败，返回原图
-					console.log('返回原图:', tempFilePath);
 					return tempFilePath;
 				}
 			},
 
 			// 生成图片文件名
-			getImageFileName(type = 'detail', index) {
+			getImageFileName(type = 'detail', originalExt = 'jpg') {
 				// 优先使用英文名，如果没有则使用中文名
 				let switchName = this.switchData.switch_name_en || this.switchData.switch_name || 'unknown';
 
 				// 移除特殊字符，只保留字母、数字、下划线
 				const safeSwitchName = switchName
-					.replace(/\s+/g, '_') // 空格替换为下划线
-					.replace(/[^a-zA-Z0-9_]/g, '') // 移除其他特殊字符
-					.replace(/_+/g, '_') // 多个下划线替换为单个
-					.replace(/^_|_$/g, ''); // 移除首尾下划线
+					.replace(/\s+/g, '_')
+					.replace(/[^a-zA-Z0-9_]/g, '')
+					.replace(/_+/g, '_')
+					.replace(/^_|_$/g, '');
 
-				return `${safeSwitchName}_${type}_${index + 1}.webp`;
+				// 生成格式化的时间字符串：YYYYMMDD_HHMMSS
+				const now = new Date();
+				const timeString = now.getFullYear() +
+					String(now.getMonth() + 1).padStart(2, '0') +
+					String(now.getDate()).padStart(2, '0') + '_' +
+					String(now.getHours()).padStart(2, '0') +
+					String(now.getMinutes()).padStart(2, '0') +
+					String(now.getSeconds()).padStart(2, '0');
+
+				// 生成随机字符串，避免文件名冲突
+				const random = Math.random().toString(36).substring(2, 8);
+
+				// 如果是其他视图类型，添加序号
+				let typePrefix = '';
+				if (type === 'other') {
+					// 获取当前其他视图的数量
+					const otherViewCount = this.switchImages.filter(img => img.type === 'other').length;
+					// 序号从1开始
+					typePrefix = `other${otherViewCount + 1}`;
+				} else {
+					// 其他类型使用原有的前缀
+					const prefixMap = {
+						detail: 'detail',
+						top: 'top',
+						stem: 'stem',
+						spring: 'spring',
+						bottom: 'bottom',
+						side: 'side',
+						housing: 'housing'
+					};
+					typePrefix = prefixMap[type] || 'other1';
+				}
+
+				// 构建文件名：轴体名_类型_时间_随机码.jpg
+				return `${safeSwitchName}_${typePrefix}_${timeString}_${random}.${originalExt}`;
 			},
 
-			// 添加图片
+			// 从文件名解析图片类型
+			getTypeFromFileName(fileName) {
+				if (!fileName) return 'detail';
+
+				// 解析文件名中的类型标识
+				const typeMatches = {
+					'detail': 'detail',
+					'top': 'top',
+					'stem': 'stem',
+					'spring': 'spring',
+					'bottom': 'bottom',
+					'side': 'side',
+					'housing': 'housing',
+					'other1': 'other',
+					'other2': 'other',
+					'other3': 'other'
+				};
+
+				// 遍历所有可能的类型标识
+				for (const [typeId, type] of Object.entries(typeMatches)) {
+					if (fileName.includes(`_${typeId}_`)) {
+						return type;
+					}
+				}
+
+				// 兼容旧的缩写格式
+				const legacyMatches = {
+					'_dt_': 'detail',
+					'_tp_': 'top',
+					'_st_': 'stem',
+					'_sp_': 'spring',
+					'_bt_': 'bottom',
+					'_sd_': 'side',
+					'_hs_': 'housing',
+					'_ot1_': 'other',
+					'_ot2_': 'other',
+					'_ot3_': 'other'
+				};
+
+				// 遍历所有旧格式的类型标识
+				for (const [typeId, type] of Object.entries(legacyMatches)) {
+					if (fileName.includes(typeId)) {
+						return type;
+					}
+				}
+
+				// 默认返回详情图类型
+				return 'detail';
+			},
+
+			// 处理添加图片
 			async handleAddImage() {
 				try {
-					const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-					// 检查是否已有图片数组
-					if (!this.switchData.preview_images) {
-						this.switchData.preview_images = [];
-					}
-
 					const res = await uni.chooseImage({
 						count: 1,
-						sizeType: ['original'],
+						sizeType: ['compressed'],
 						sourceType: ['album', 'camera']
 					});
 
-					// 用户取消选择图片
-					if (!res || !res.tempFilePaths || !res.tempFilePaths.length) {
-						console.log('用户取消选择图片');
-						return;
-					}
-
 					const tempFilePath = res.tempFilePaths[0];
+
 					// 压缩图片
 					const compressedPath = await this.compressImage(tempFilePath);
 
+					// 获取原始文件扩展名
+					const originalExt = 'jpg'; // 统一使用 jpg 格式
+
 					// 使用规范的文件命名
-					const fileName = this.getImageFileName('detail', this.switchImages.length);
-					const cloudPath = fileName; // 直接使用文件名
+					const fileName = this.getImageFileName('detail', originalExt);
+					const cloudPath = fileName;
 
-					uni.showLoading({ title: '上传中...' });
-
-					// 上传图片
+					// 上传到云存储
 					const uploadRes = await uniCloud.uploadFile({
 						filePath: compressedPath,
-						cloudPath
+						cloudPath: cloudPath,
 					});
 
-					console.log('上传结果:', uploadRes); // 添加日志
-
-					if (!uploadRes.fileID) {
-						throw new Error('上传失败：未获取到 fileID');
-					}
+					console.log('文件上传成功:', uploadRes);
 
 					// 构建图片信息对象
 					const imageInfo = {
 						fileID: uploadRes.fileID,
 						type: 'detail',
 						fileName: fileName,
-						uploadTime: now,
-						updateTime: ''
+						uploadTime: this.getBeiJingISOString(),
+						updateTime: this.getBeiJingISOString()
 					};
 
-					console.log('图片信息:', imageInfo); // 添加日志
-
 					// 更新数据库
-					const updateRes = await uniCloud.callFunction({
+					const { result: updateResult } = await uniCloud.callFunction({
 						name: 'switchApi',
 						data: {
 							action: 'updateSwitchImage',
@@ -416,38 +553,57 @@
 						}
 					});
 
-					console.log('数据库更新结果:', updateRes); // 添加日志
-
-					if (updateRes.result.errCode !== 0) {
-						throw new Error('更新数据库失败：' + updateRes.result.errMsg);
+					if (!updateResult || updateResult.errCode !== 0) {
+						throw new Error(updateResult?.errMsg || '更新失败');
 					}
 
-					// 深拷贝图片信息
-					const newImageInfo = JSON.parse(JSON.stringify(imageInfo));
-					this.switchImages.push(newImageInfo);
-					this.switchData.preview_images = JSON.parse(JSON.stringify(this.switchImages));
+					// 更新本地数据
+					this.switchImages.push(imageInfo);
+					this.switchData.preview_images = [...this.switchImages];
+
+					// 切换到新添加的图片
+					this.currentImageIndex = this.switchImages.length - 1;
 
 					// 强制更新视图
 					this.$forceUpdate();
 
-					// 刷新数据以确保同步
-					await this.loadSwitchData(this.switchData._id);
-
-					uni.showToast({ title: '添加成功' });
+					uni.showToast({
+						title: '添加成功',
+						icon: 'success'
+					});
 				} catch (e) {
-					// 处理用户取消选择图片的情况
-					if (e.errMsg === 'chooseImage:fail cancel') {
-						console.log('用户取消选择图片');
-						return;
-					}
-
 					console.error('添加图片失败:', e);
 					uni.showToast({
-						title: '添加失败',
+						title: e.message || '添加失败',
 						icon: 'none'
 					});
-				} finally {
-					uni.hideLoading();
+				}
+			},
+
+			// 删除云存储中的文件
+			async deleteCloudFile(fileID) {
+				if (!fileID || fileID.includes('default_switch.webp')) {
+					return;
+				}
+
+				try {
+					const result = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'deleteCloudFile',
+							fileList: [fileID]
+						}
+					});
+
+					if (result.result.errCode === 0) {
+						console.log('文件删除成功:', fileID, result);
+						return true;
+					} else {
+						throw new Error(result.result.errMsg);
+					}
+				} catch (error) {
+					console.error('文件删除失败:', error);
+					return false;
 				}
 			},
 
@@ -462,7 +618,7 @@
 				}
 
 				try {
-					const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+					const now = this.getBeiJingISOString();
 					const res = await uni.chooseImage({
 						count: 1,
 						sizeType: ['original'],
@@ -482,42 +638,35 @@
 					// 压缩并转换图片
 					const compressedPath = await this.compressImage(tempFilePath)
 
+					// 获取原始文件扩展名
+					const originalExt = 'jpg'; // 统一使用 jpg 格式
+
 					// 使用规范的文件命名
-					const fileName = this.getImageFileName('detail', this.currentImageIndex);
+					const fileName = this.getImageFileName('detail', originalExt);
 					const cloudPath = fileName;
 
 					uni.showLoading({ title: '上传中...' });
 
 					// 上传新图片
-					const uploadRes = await uniCloud.uploadFile({
+					const uploadResult = await uniCloud.uploadFile({
 						filePath: compressedPath,
 						cloudPath
 					});
 
 					// 如果存在旧图片且不是默认图片，则删除
-					if (oldFileID && !oldFileID.includes('default_switch.webp')) {
-						try {
-							await uniCloud.deleteFile({
-								fileList: [oldFileID]
-							});
-							console.log('旧图片删除成功:', oldFileID);
-						} catch (deleteError) {
-							console.error('删除旧图片失败:', deleteError);
-							// 继续执行，不影响新图片的更新
-						}
-					}
+					await this.deleteCloudFile(oldFileID);
 
 					// 构建新的图片信息对象
 					const imageInfo = {
-						fileID: uploadRes.fileID,
+						fileID: uploadResult.fileID,
 						type: 'detail',
 						fileName: fileName,
-						uploadTime: this.switchImages[this.currentImageIndex].uploadTime,
+						uploadTime: this.getBeiJingISOString(),
 						updateTime: now
 					};
 
 					// 更新数据库
-					await uniCloud.callFunction({
+					const { result: updateResult } = await uniCloud.callFunction({
 						name: 'switchApi',
 						data: {
 							action: 'updateSwitchImage',
@@ -526,6 +675,11 @@
 							imageInfo: imageInfo
 						}
 					});
+
+					// 检查返回结果
+					if (!updateResult || updateResult.errCode !== 0) {
+						throw new Error(updateResult?.errMsg || '更新失败');
+					}
 
 					// 更新本地数据
 					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
@@ -552,71 +706,97 @@
 				}
 			},
 
-			// 删除图片
+			// 处理删除图片
 			async handleDeleteImage() {
-				if (!this.switchImages.length) {
+				try {
+					console.log('开始删除图片操作');
+					// 获取当前图片信息
+					const currentImage = this.switchImages[this.currentImageIndex];
+					console.log('当前图片信息:', currentImage);
+
+					// 如果是默认图片，不允许删除
+					if (!currentImage.fileID) {
+						uni.showToast({
+							title: '默认图片不能删除',
+							icon: 'none'
+						});
+						return;
+					}
+
+					// 确认删除
+					const confirmRes = await uni.showModal({
+						title: '确认删除',
+						content: '确定要删除这张图片吗？',
+						confirmText: '删除',
+						confirmColor: '#f44336'
+					});
+
+					if (!confirmRes.confirm) {
+						console.log('用户取消删除');
+						return;
+					}
+
+					console.log('准备调用云函数删除图片:', {
+						switchId: this.switchData._id,
+						imageIndex: this.currentImageIndex,
+						fileID: currentImage.fileID
+					});
+
+					// 调用云函数删除图片
+					const { result } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'deleteSwitchImage',
+							switchId: this.switchData._id,
+							imageIndex: this.currentImageIndex,
+							fileID: currentImage.fileID
+						}
+					});
+
+					console.log('云函数返回结果:', result);
+
+					// 检查返回结果
+					if (!result || result.errCode !== 0) {
+						throw new Error(result?.errMsg || '删除失败');
+					}
+
+					// 创建新的数组引用
+					const newImages = [...this.switchImages];
+					newImages.splice(this.currentImageIndex, 1);
+
+					// 更新数据
+					this.switchImages = newImages;
+					this.switchData.preview_images = newImages;
+
+					// 如果删除后还有图片，调整当前索引
+					if (this.switchImages.length > 0) {
+						this.currentImageIndex = Math.min(this.currentImageIndex, this.switchImages.length - 1);
+					} else {
+						this.currentImageIndex = 0;
+					}
+
+					// 关闭编辑模式
+					this.isEditing = false;
+
 					uni.showToast({
-						title: '没有可删除的图片',
+						title: '删除成功',
+						icon: 'success'
+					});
+				} catch (e) {
+					console.error('删除图片失败:', e);
+					uni.showToast({
+						title: e.message || '删除失败',
 						icon: 'none'
 					});
-					return;
 				}
-
-				uni.showModal({
-					title: '确认删除',
-					content: '是否删除当前图片？',
-					success: async (res) => {
-						if (res.confirm) {
-							try {
-								uni.showLoading({ title: '删除中...' });
-
-								// 获取要删除的图片 fileID
-								const fileID = this.switchImages[this.currentImageIndex].fileID;
-
-								// 如果存在文件且不是默认图片，则删除云存储中的文件
-								if (fileID && !fileID.includes('default_switch.webp')) {
-									try {
-										await uniCloud.deleteFile({
-											fileList: [fileID]
-										});
-										console.log('图片文件删除成功:', fileID);
-									} catch (deleteError) {
-										console.error('删除图片文件失败:', deleteError);
-									}
-								}
-
-								// 更新数据库
-								await uniCloud.callFunction({
-									name: 'switchApi',
-									data: {
-										action: 'updateSwitchImage',
-										switchId: this.switchData._id,
-										imageIndex: this.currentImageIndex,
-										imageInfo: null
-									}
-								});
-
-								// 重新加载数据
-								this.loadSwitchData(this.switchData._id);
-
-								uni.showToast({ title: '删除成功' });
-							} catch (e) {
-								console.error('删除图片失败:', e);
-								uni.showToast({
-									title: '删除失败',
-									icon: 'none'
-								});
-							} finally {
-								uni.hideLoading();
-							}
-						}
-					}
-				});
 			},
 
 			// 处理图片加载错误
 			handleImageError(index) {
-				console.log('图片加载失败:', index)
+				console.error('图片加载失败:', index, {
+					fileID: this.switchImages[index].fileID,
+					type: this.switchImages[index].type
+				});
 				// 将错误图片替换为默认图片
 				if (this.switchImages[index]) {
 					this.$set(this.switchImages[index], 'fileID', '/static/default_switch.webp')
@@ -638,20 +818,84 @@
 			// 确认编辑图片
 			async handleEditConfirm() {
 				try {
-					await this.handleEditImage();
-					this.isEditing = false;
+					const res = await uni.chooseImage({
+						count: 1,
+						sizeType: ['original'],
+						sourceType: ['album', 'camera']
+					});
+
+					// 用户取消选择图片
+					if (!res || !res.tempFilePaths || !res.tempFilePaths.length) {
+						console.log('用户取消选择图片');
+						return;
+					}
+
+					const tempFilePath = res.tempFilePaths[0];
+					// 压缩图片
+					const compressedPath = await this.compressImage(tempFilePath);
+
+					// 获取原始文件扩展名
+					const originalExt = 'jpg'; // 统一使用 jpg 格式
+
+					// 使用规范的文件命名
+					const fileName = this.getImageFileName('detail', originalExt);
+					const cloudPath = fileName;
+
+					uni.showLoading({ title: '上传中...' });
+
+					// 保存旧图片的 fileID，用于后续删除
+					const oldFileID = this.switchImages[this.currentImageIndex].fileID;
+
+					// 上传新图片
+					const uploadResult = await uniCloud.uploadFile({
+						filePath: compressedPath,
+						cloudPath
+					});
+
+					// 如果存在旧图片且不是默认图片，则删除
+					await this.deleteCloudFile(oldFileID);
+
+					// 构建新的图片信息对象
+					const imageInfo = {
+						fileID: uploadResult.fileID,
+						type: this.switchImages[this.currentImageIndex].type,
+						fileName: fileName,
+						uploadTime: this.getBeiJingISOString(),
+						updateTime: this.getBeiJingISOString()
+					};
+
+					// 更新数据库
+					const { result: updateResult } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'updateSwitchImage',
+							switchId: this.switchData._id,
+							imageIndex: this.currentImageIndex,
+							imageInfo: imageInfo
+						}
+					});
+
+					// 检查返回结果
+					if (!updateResult || updateResult.errCode !== 0) {
+						throw new Error(updateResult?.errMsg || '更新失败');
+					}
+
+					// 更新本地数据
+					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
+					this.switchData.preview_images = [...this.switchImages];
+
+					// 强制更新视图
+					this.$forceUpdate();
+
+					uni.showToast({ title: '更换成功' });
 				} catch (e) {
 					console.error('编辑图片失败:', e);
-				}
-			},
-
-			// 添加图片并关闭编辑框
-			async handleAddAndClose() {
-				try {
-					await this.handleAddImage();
-					this.isEditing = false;
-				} catch (e) {
-					console.error('添加图片失败:', e);
+					uni.showToast({
+						title: '更换失败',
+						icon: 'none'
+					});
+				} finally {
+					uni.hideLoading();
 				}
 			},
 
@@ -679,6 +923,261 @@
 			// 点击指示器切换图片
 			handleIndicatorTap(index) {
 				this.currentImageIndex = index;
+			},
+
+			// 获取图片类型文本
+			getImageTypeText(type) {
+				const typeMap = {
+					detail: '详情图',
+					top: '上盖图',
+					stem: '轴心图',
+					spring: '弹簧图',
+					bottom: '底壳图',
+					side: '侧图',
+					housing: '外壳图',
+					other: '其他视图'
+				};
+				return typeMap[type] || type;
+			},
+
+			// 修改图片类型
+			async handleChangeImageType() {
+				try {
+					// 第一组选项
+					const imageTypes = [
+						{ text: '详情图', value: 'detail' },
+						{ text: '上盖图', value: 'top' },
+						{ text: '轴心图', value: 'stem' },
+						{ text: '弹簧图', value: 'spring' },
+						{ text: '更多类型...', value: 'more' }
+					];
+
+					const result = await new Promise((resolve, reject) => {
+						uni.showActionSheet({
+							itemList: imageTypes.map(t => t.text),
+							itemColor: '#000000',
+							success: resolve,
+							fail: (err) => {
+								if (err.errMsg.includes('fail cancel')) {
+									resolve({ tapIndex: -1 });
+								} else {
+									reject(err);
+								}
+							}
+						});
+					});
+
+					if (result.tapIndex === -1) {
+						return;
+					}
+
+					// 如果选择"更多类型"，显示第二组选项
+					let selectedType = imageTypes[result.tapIndex].value;
+					if (selectedType === 'more') {
+						// 第二组选项
+						const moreTypes = [
+							{ text: '底壳图', value: 'bottom' },
+							{ text: '侧图', value: 'side' },
+							{ text: '外壳图', value: 'housing' },
+							{ text: '其他视图', value: 'other' },
+							{ text: '返回上级', value: 'back' }
+						];
+
+						const moreResult = await new Promise((resolve, reject) => {
+							uni.showActionSheet({
+								itemList: moreTypes.map(t => t.text),
+								itemColor: '#000000',
+								success: resolve,
+								fail: (err) => {
+									if (err.errMsg.includes('fail cancel')) {
+										resolve({ tapIndex: -1 });
+									} else {
+										reject(err);
+									}
+								}
+							});
+						});
+
+						if (moreResult.tapIndex === -1 || moreTypes[moreResult.tapIndex].value === 'back') {
+							// 如果取消或选择返回，重新调用本方法
+							this.handleChangeImageType();
+							return;
+						}
+
+						selectedType = moreTypes[moreResult.tapIndex].value;
+					}
+
+					// 检查"其他视图"的数量限制
+					if (selectedType === 'other' && this.currentImage.type !== 'other') {
+						const otherViewCount = this.switchImages.filter(img => img.type === 'other').length;
+						if (otherViewCount >= 3) {
+							uni.showToast({
+								title: '其他视图最多只能有3张',
+								icon: 'none'
+							});
+							return;
+						}
+					}
+
+					// 获取原始文件扩展名
+					const originalExt = 'jpg'; // 统一使用 jpg 格式
+
+					// 生成新的文件名
+					const newFileName = this.getImageFileName(selectedType, originalExt);
+
+					// 更新图片类型
+					const imageInfo = {
+						...this.currentImage,
+						type: selectedType,
+						fileName: newFileName,
+						updateTime: this.getBeiJingISOString()
+					};
+
+					// 更新数据库
+					const { result: updateTypeResult } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'updateSwitchImage',
+							switchId: this.switchData._id,
+							imageIndex: this.currentImageIndex,
+							imageInfo: imageInfo
+						}
+					});
+
+					// 检查返回结果
+					if (!updateTypeResult || updateTypeResult.errCode !== 0) {
+						throw new Error(updateTypeResult?.errMsg || '更新失败');
+					}
+
+					// 更新本地数据
+					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
+					this.switchData.preview_images = [...this.switchImages];
+
+					// 强制更新视图
+					this.$forceUpdate();
+
+					uni.showToast({
+						title: '类型修改成功',
+						icon: 'success'
+					});
+				} catch (e) {
+					console.error('修改图片类型失败:', e);
+					uni.showToast({
+						title: '修改失败',
+						icon: 'none'
+					});
+				}
+			},
+
+			// 获取图片类型索引
+			getTypeIndex(type) {
+				return this.imageTypeOptions.findIndex(option => option.value === type);
+			},
+
+			// 处理类型变化
+			async handleTypeChange(e) {
+				// 如果是默认图片，不允许修改类型
+				if (!this.currentImage.fileID) {
+					uni.showToast({
+						title: '默认图片不能修改类型',
+						icon: 'none'
+					});
+					return;
+				}
+
+				const selectedType = this.imageTypeOptions[e.detail.value].value;
+
+				// 如果选择的类型与当前类型相同，不做处理
+				if (selectedType === this.currentImage.type) {
+					return;
+				}
+
+				// 检查"其他视图"的数量限制
+				if (selectedType === 'other' && this.currentImage.type !== 'other') {
+					const otherViewCount = this.switchImages.filter(img => img.type === 'other').length;
+					if (otherViewCount >= 3) {
+						uni.showToast({
+							title: '其他视图最多只能有3张',
+							icon: 'none'
+						});
+						return;
+					}
+				}
+
+				try {
+					// 获取原始文件扩展名
+					const originalExt = 'jpg'; // 统一使用 jpg 格式
+
+					// 生成新的文件名
+					const newFileName = this.getImageFileName(selectedType, originalExt);
+
+					// 更新图片类型
+					const imageInfo = {
+						...this.currentImage,
+						type: selectedType,
+						fileName: newFileName,
+						updateTime: this.getBeiJingISOString()
+					};
+
+					// 更新数据库
+					const { result: updateTypeResult } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'updateSwitchImage',
+							switchId: this.switchData._id,
+							imageIndex: this.currentImageIndex,
+							imageInfo: imageInfo
+						}
+					});
+
+					// 检查返回结果
+					if (!updateTypeResult || updateTypeResult.errCode !== 0) {
+						throw new Error(updateTypeResult?.errMsg || '更新失败');
+					}
+
+					// 更新本地数据
+					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
+					this.switchData.preview_images = [...this.switchImages];
+
+					// 强制更新视图
+					this.$forceUpdate();
+
+					uni.showToast({
+						title: '类型修改成功',
+						icon: 'success'
+					});
+				} catch (e) {
+					console.error('修改图片类型失败:', e);
+					uni.showToast({
+						title: '修改失败',
+						icon: 'none'
+					});
+				}
+			},
+
+			// 添加通过 ID 加载数据的方法
+			async loadSwitchDataById(id) {
+				try {
+					const { result } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'getSwitchById',
+							id: id
+						}
+					})
+
+					if (result && result.errCode === 0 && result.data) {
+						this.handleSwitchData(result.data)
+					} else {
+						throw new Error(result?.errMsg || '加载失败')
+					}
+				} catch (e) {
+					console.error('加载数据失败:', e)
+					uni.showToast({
+						title: '加载失败',
+						icon: 'none'
+					})
+				}
 			}
 		}
 	}
@@ -700,10 +1199,44 @@
 			align-items: center;
 			background-color: #fff;
 
-			.switch-image {
+			.image-wrapper {
+				position: relative;
 				width: 100%;
 				height: 100%;
-				object-fit: contain;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+
+				.image-type-tag {
+					position: absolute;
+					top: 10px;
+					right: 10px;
+					background-color: rgba(0, 0, 0, 0.6);
+					color: #fff;
+					padding: 4px 8px;
+					border-radius: 4px;
+					font-size: 12px;
+					z-index: 2;
+					display: flex;
+					align-items: center;
+					gap: 4px;
+					cursor: pointer;
+
+					&:active {
+						opacity: 0.8;
+					}
+
+					.edit-icon {
+						font-size: 12px;
+						margin-left: 4px;
+					}
+				}
+
+				.switch-image {
+					width: 100%;
+					height: 100%;
+					object-fit: contain;
+				}
 			}
 		}
 	}
@@ -824,6 +1357,37 @@
 				display: flex;
 				align-items: center;
 				justify-content: center;
+
+				.type-selector {
+					position: absolute;
+					top: 10px;
+					right: 10px;
+					z-index: 2;
+
+					.picker-content {
+						background-color: rgba(0, 0, 0, 0.6);
+						color: #fff;
+						padding: 4px 8px;
+						border-radius: 4px;
+						font-size: 12px;
+						display: flex;
+						align-items: center;
+						gap: 4px;
+						min-width: 50px;
+						height: 18px;
+						justify-content: center;
+					}
+
+					&:active {
+						opacity: 0.8;
+					}
+
+					.picker-arrow {
+						font-size: 12px;
+						margin-left: 4px;
+						color: #fff;
+					}
+				}
 
 				.nav-btn {
 					position: absolute;

@@ -22,6 +22,8 @@
 	background-color: #fff;
 	padding: 12px 15px;
 	display: flex;
+	position: relative;
+	border-top: 0.5px solid #eee;
 
 	.title {
 		flex: none;
@@ -38,6 +40,7 @@
 		padding-left: 15px;
 		line-height: 1.4;
 		word-break: break-all;
+		min-height: 20px;
 	}
 }
 </style>

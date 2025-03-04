@@ -21,7 +21,7 @@
 					<text class="history-title">搜索历史</text>
 				</view>
 				<view class="header-right">
-					<uni-icons type="trash" size="16" @click="clearHistory" />
+					<uni-icons type="trash" size="14" color="#000000" @click="clearHistory" />
 				</view>
 			</view>
 			<view class="history-list">
@@ -29,9 +29,11 @@
 					class="history-item"
 					v-for="(item, index) in searchHistory"
 					:key="index"
-					@click="handleHistoryClick(item)"
 				>
-					<text class="item-text">{{ item }}</text>
+					<view class="item-content" @click="handleHistoryClick(item)">
+						<text class="item-text">{{ item }}</text>
+					</view>
+					<text class="delete-btn" @click.stop="deleteHistoryItem(index, $event)">×</text>
 				</view>
 			</view>
 		</view>
@@ -71,6 +73,8 @@
 				searchHistory: [], // 搜索历史
 				hasSearch: false, // 是否已执行搜索
 				showHistory: false, // 是否显示搜索历史
+				isNavigating: false, // 添加导航状态标记
+				isDeleting: false, // 添加删除操作标记
 			}
 		},
 
@@ -92,6 +96,11 @@
 			handleBlur() {
 				// 延迟关闭历史记录,让点击事件能够执行
 				setTimeout(() => {
+					// 如果正在删除操作中，不关闭搜索历史
+					if (this.isDeleting) {
+						this.isDeleting = false;
+						return;
+					}
 					this.showHistory = false
 				}, 200)
 			},
@@ -143,10 +152,10 @@
 						})
 					} else {
 						console.log('搜索成功, 找到记录数:', this.switchList.length)
+						// 只在有搜索结果时保存历史
+						this.saveSearchHistory(keyword)
 					}
 
-					// 保存搜索历史
-					this.saveSearchHistory(keyword)
 				} catch (e) {
 					console.error('搜索失败:', e)
 					this.switchList = []
@@ -184,20 +193,52 @@
 			},
 
 			// 处理列表项点击
-			handleItemClick(item) {
-				console.log('点击轴体项:', item)
-				console.log('准备跳转到详情页, ID:', item._id)
-				uni.navigateTo({
-					url: `/pages/switchInfo/switchInfo?id=${item._id}`,
-					success: () => {
-						console.log('跳转成功')
-						// 使用事件通道传递完整数据
-						uni.$emit('switchData', item)
-					},
-					fail: (err) => {
-						console.error('跳转失败:', err)
-					}
-				})
+			async handleItemClick(item) {
+				// 如果正在导航中，直接返回
+				if (this.isNavigating) {
+					console.log('导航进行中，跳过重复点击');
+					return;
+				}
+
+				// 设置导航状态为true
+				this.isNavigating = true;
+
+				try {
+					console.log('点击轴体项:', item)
+					console.log('准备跳转到详情页, ID:', item._id)
+
+					// 跳转到详情页
+					await uni.navigateTo({
+						url: `/pages/switchInfo/switchInfo?id=${item._id}`,
+						success: async () => {
+							console.log('跳转成功')
+							// 等待页面准备完成后再传递数据
+							setTimeout(() => {
+								// 传递数据
+								uni.$emit('switchData', item)
+								console.log('数据已传递到详情页')
+							}, 100)
+						},
+						fail: (err) => {
+							console.error('跳转失败:', err)
+							uni.showToast({
+								title: '跳转失败',
+								icon: 'none'
+							})
+						}
+					})
+				} catch (e) {
+					console.error('跳转失败:', e)
+					uni.showToast({
+						title: '跳转失败',
+						icon: 'none'
+					})
+				} finally {
+					// 导航完成后重置状态
+					setTimeout(() => {
+						this.isNavigating = false;
+					}, 500); // 添加500ms延迟，防止快速重复点击
+				}
 			},
 
 			// 保存搜索历史
@@ -261,6 +302,16 @@
 				// 返回默认图片
 				return '/static/default_switch.webp'
 			},
+
+			// 删除单个搜索历史
+			deleteHistoryItem(index, event) {
+				this.isDeleting = true; // 标记正在删除
+				// 阻止事件冒泡
+				event.stopPropagation();
+				this.searchHistory.splice(index, 1)
+				// 保存到本地存储
+				uni.setStorageSync('searchHistory', JSON.stringify(this.searchHistory))
+			},
 		}
 	}
 </script>
@@ -311,42 +362,77 @@
 	.search-history {
 		margin-top: 10px;
 		background-color: rgba(255, 255, 255, 0.8);
-		padding: 0 15px;
+		padding: 0 12px;
 		position: absolute;
 		top: 54px;
 		left: 0;
 		right: 0;
 		z-index: 100;
-		box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+		box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 
 		.history-header {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			padding: 15px 0;
-			border-bottom: 1px solid rgba(245, 245, 245, 0.4);
+			padding: 10px 0;
+			border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
 
 			.history-title {
 				font-size: 14px;
-				color: #333;
+				color: #000000;
+				font-weight: 600;
+			}
+
+			.header-right {
+				padding: 4px;
+
+				&:active {
+					opacity: 0.7;
+				}
 			}
 		}
 
 		.history-list {
 			display: flex;
 			flex-wrap: wrap;
-			padding: 15px 0;
+			padding: 8px 0;
 			gap: 10px;
 
 			.history-item {
-				background: rgba(247, 247, 247, 0.4);
-				padding: 8px 12px;
-				border-radius: 4px;
-				font-size: 14px;
+				background: rgba(0, 0, 0, 0.03);
+				border-radius: 15px;
+				font-size: 12px;
 				color: #333;
+				position: relative;
+				display: flex;
+				align-items: center;
+
+				.item-content {
+					padding: 8px 24px 8px 12px;
+
+					&:active {
+						opacity: 0.7;
+					}
+				}
 
 				.item-text {
 					line-height: 1;
+				}
+
+				.delete-btn {
+					position: absolute;
+					right: 6px;
+					font-size: 16px;
+					color: #999;
+					width: 20px;
+					height: 20px;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+
+					&:active {
+						opacity: 0.7;
+					}
 				}
 			}
 		}
