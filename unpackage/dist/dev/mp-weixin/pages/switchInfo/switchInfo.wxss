@@ -261,3 +261,11 @@
 .edit-overlay .edit-container .image-indicators .indicator-dot:active {
   opacity: 0.8;
 }
+.switch-image {
+  width: 100%;
+  height: 100%;
+  /* 添加点击反馈 */
+}
+.switch-image:active {
+  opacity: 0.8;
+}

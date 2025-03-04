@@ -74,6 +74,7 @@
 						class="switch-image"
 						@error="handleImageError(index)"
 						@load="handleImageLoad(index)"
+						@tap="handleImageTap(index)"
 					/>
 					<view class="image-type-tag" v-if="image.type">
 						{{ getImageTypeText(image.type) }}
@@ -323,12 +324,24 @@
 					// 获取文件系统管理器
 					const fs = wx.getFileSystemManager();
 
+					// 检查文件路径是否有效
+					if (!tempFilePath || typeof tempFilePath !== 'string') {
+						throw new Error('无效的文件路径');
+					}
+
 					// 先获取图片信息
+					console.log('准备获取图片信息...');
 					const imageInfo = await new Promise((resolve, reject) => {
 						wx.getImageInfo({
 							src: tempFilePath,
-							success: resolve,
-							fail: reject
+							success: (res) => {
+								console.log('获取图片信息成功:', res);
+								resolve(res);
+							},
+							fail: (error) => {
+								console.error('获取图片信息失败:', error);
+								reject(new Error('获取图片信息失败'));
+							}
 						});
 					});
 					console.log('原始图片信息:', imageInfo);
@@ -337,7 +350,10 @@
 					const originalFileInfo = await new Promise((resolve, reject) => {
 						fs.getFileInfo({
 							filePath: tempFilePath,
-							success: resolve,
+							success: (res) => {
+								console.log('获取文件大小成功:', res);
+								resolve(res);
+							},
 							fail: reject
 						});
 					});
@@ -347,16 +363,38 @@
 					// 计算压缩后的尺寸
 					let targetWidth = imageInfo.width;
 					let targetHeight = imageInfo.height;
-					const maxSize = 1280; // 设置最大边长为1280px
+					const maxSize = 1024; // 设置最大边长为1024px
+					const minSize = 800; // 设置最小边长为800px
 					const quality = 50; // 降低质量以减小文件大小
 
-					// 等比例缩放
-					if (targetWidth > targetHeight && targetWidth > maxSize) {
-						targetHeight = Math.round((targetHeight * maxSize) / targetWidth);
-						targetWidth = maxSize;
-					} else if (targetHeight > targetWidth && targetHeight > maxSize) {
-						targetWidth = Math.round((targetWidth * maxSize) / targetHeight);
-						targetHeight = maxSize;
+					// 计算缩放比例
+					let scale = 1;
+
+					// 如果图片太大，需要缩小
+					if (targetWidth > maxSize || targetHeight > maxSize) {
+						// 找出最大的边，计算缩放比例
+						const maxDimension = Math.max(targetWidth, targetHeight);
+						scale = maxSize / maxDimension;
+						console.log('图片需要缩小，缩放比例:', scale);
+					}
+
+					// 如果图片太小，需要放大
+					if (targetWidth < minSize && targetHeight < minSize) {
+						// 找出最小的边，计算放大比例
+						const minDimension = Math.min(targetWidth, targetHeight);
+						scale = minSize / minDimension;
+						console.log('图片需要放大，缩放比例:', scale);
+					}
+
+					// 应用缩放
+					if (scale !== 1) {
+						targetWidth = Math.round(targetWidth * scale);
+						targetHeight = Math.round(targetHeight * scale);
+						console.log('应用缩放后的尺寸:', {
+							width: targetWidth,
+							height: targetHeight,
+							scale: scale
+						});
 					}
 
 					console.log('计算后的尺寸:', { width: targetWidth, height: targetHeight });
@@ -368,7 +406,10 @@
 							quality: quality,
 							compressedWidth: targetWidth,
 							compressHeight: targetHeight,
-							success: resolve,
+							success: (res) => {
+								console.log('压缩图片成功:', res);
+								resolve(res);
+							},
 							fail: reject
 						});
 					});
@@ -607,36 +648,32 @@
 				}
 			},
 
-			// 修改图片
-			async handleEditImage() {
-				if (!this.switchImages.length) {
-					uni.showToast({
-						title: '没有可修改的图片',
-						icon: 'none'
-					})
-					return
-				}
-
+			// 处理编辑图片
+			async handleEditConfirm() {
 				try {
-					const now = this.getBeiJingISOString();
-					const res = await uni.chooseImage({
-						count: 1,
-						sizeType: ['original'],
-						sourceType: ['album', 'camera']
-					})
+					// 选择图片
+					const res = await new Promise((resolve, reject) => {
+						wx.chooseImage({
+							count: 1,
+							sizeType: ['original', 'compressed'],
+							sourceType: ['album', 'camera'],
+							success: resolve,
+							fail: (error) => {
+								// 用户取消选择时不显示错误提示
+								if (error.errMsg.includes('cancel')) {
+									reject(new Error('cancel'));
+								} else {
+									reject(error);
+								}
+							}
+						});
+					});
 
-					// 用户取消选择图片
-					if (!res || !res.tempFilePaths || !res.tempFilePaths.length) {
-						console.log('用户取消选择图片');
-						return;
-					}
+					const tempFilePath = res.tempFilePaths[0];
+					console.log('选择的图片:', tempFilePath);
 
-					// 保存旧图片的 fileID，用于后续删除
-					const oldFileID = this.switchImages[this.currentImageIndex].fileID;
-
-					const tempFilePath = res.tempFilePaths[0]
-					// 压缩并转换图片
-					const compressedPath = await this.compressImage(tempFilePath)
+					// 压缩图片
+					const compressedPath = await this.compressImage(tempFilePath);
 
 					// 获取原始文件扩展名
 					const originalExt = 'jpg'; // 统一使用 jpg 格式
@@ -646,6 +683,9 @@
 					const cloudPath = fileName;
 
 					uni.showLoading({ title: '上传中...' });
+
+					// 保存旧图片的 fileID，用于后续删除
+					const oldFileID = this.switchImages[this.currentImageIndex].fileID;
 
 					// 上传新图片
 					const uploadResult = await uniCloud.uploadFile({
@@ -659,10 +699,10 @@
 					// 构建新的图片信息对象
 					const imageInfo = {
 						fileID: uploadResult.fileID,
-						type: 'detail',
+						type: this.switchImages[this.currentImageIndex].type,
 						fileName: fileName,
 						uploadTime: this.getBeiJingISOString(),
-						updateTime: now
+						updateTime: this.getBeiJingISOString()
 					};
 
 					// 更新数据库
@@ -685,20 +725,20 @@
 					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
 					this.switchData.preview_images = this.switchImages;
 
-					// 刷新数据以确保同步
-					this.loadSwitchData(this.switchData._id);
+					// 强制更新视图
+					this.$forceUpdate();
 
-					uni.showToast({ title: '修改成功' });
+					uni.showToast({ title: '更换成功' });
 				} catch (e) {
-					// 处理用户取消选择图片的情况
-					if (e.errMsg === 'chooseImage:fail cancel') {
+					// 用户取消选择时不显示错误提示
+					if (e.message === 'cancel') {
 						console.log('用户取消选择图片');
 						return;
 					}
 
-					console.error('修改图片失败:', e);
+					console.error('编辑图片失败:', e);
 					uni.showToast({
-						title: '修改失败',
+						title: '编辑图片失败',
 						icon: 'none'
 					});
 				} finally {
@@ -813,90 +853,6 @@
 					return;
 				}
 				this.isEditing = true;
-			},
-
-			// 确认编辑图片
-			async handleEditConfirm() {
-				try {
-					const res = await uni.chooseImage({
-						count: 1,
-						sizeType: ['original'],
-						sourceType: ['album', 'camera']
-					});
-
-					// 用户取消选择图片
-					if (!res || !res.tempFilePaths || !res.tempFilePaths.length) {
-						console.log('用户取消选择图片');
-						return;
-					}
-
-					const tempFilePath = res.tempFilePaths[0];
-					// 压缩图片
-					const compressedPath = await this.compressImage(tempFilePath);
-
-					// 获取原始文件扩展名
-					const originalExt = 'jpg'; // 统一使用 jpg 格式
-
-					// 使用规范的文件命名
-					const fileName = this.getImageFileName('detail', originalExt);
-					const cloudPath = fileName;
-
-					uni.showLoading({ title: '上传中...' });
-
-					// 保存旧图片的 fileID，用于后续删除
-					const oldFileID = this.switchImages[this.currentImageIndex].fileID;
-
-					// 上传新图片
-					const uploadResult = await uniCloud.uploadFile({
-						filePath: compressedPath,
-						cloudPath
-					});
-
-					// 如果存在旧图片且不是默认图片，则删除
-					await this.deleteCloudFile(oldFileID);
-
-					// 构建新的图片信息对象
-					const imageInfo = {
-						fileID: uploadResult.fileID,
-						type: this.switchImages[this.currentImageIndex].type,
-						fileName: fileName,
-						uploadTime: this.getBeiJingISOString(),
-						updateTime: this.getBeiJingISOString()
-					};
-
-					// 更新数据库
-					const { result: updateResult } = await uniCloud.callFunction({
-						name: 'switchApi',
-						data: {
-							action: 'updateSwitchImage',
-							switchId: this.switchData._id,
-							imageIndex: this.currentImageIndex,
-							imageInfo: imageInfo
-						}
-					});
-
-					// 检查返回结果
-					if (!updateResult || updateResult.errCode !== 0) {
-						throw new Error(updateResult?.errMsg || '更新失败');
-					}
-
-					// 更新本地数据
-					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
-					this.switchData.preview_images = [...this.switchImages];
-
-					// 强制更新视图
-					this.$forceUpdate();
-
-					uni.showToast({ title: '更换成功' });
-				} catch (e) {
-					console.error('编辑图片失败:', e);
-					uni.showToast({
-						title: '更换失败',
-						icon: 'none'
-					});
-				} finally {
-					uni.hideLoading();
-				}
 			},
 
 			// 处理触发区域点击
@@ -1177,6 +1133,55 @@
 						title: '加载失败',
 						icon: 'none'
 					})
+				}
+			},
+
+			// 处理图片点击预览
+			async handleImageTap(index) {
+				// 如果正在编辑模式，不进行预览
+				if (this.isEditing) {
+					return;
+				}
+
+				try {
+					// 过滤有效的图片URL
+					const urls = this.switchImages
+						.filter(img => img.fileID && img.fileID !== '/static/default_switch.webp')
+						.map(img => img.fileID);
+
+					// 如果没有有效的图片URL
+					if (urls.length === 0) {
+						uni.showToast({
+							title: '无可预览图片',
+							icon: 'none'
+						});
+						return;
+					}
+
+					// 获取当前图片的URL
+					const currentFileID = this.switchImages[index].fileID;
+
+					// 使用微信的预览图片API
+					wx.previewImage({
+						current: currentFileID, // 当前显示图片的URL
+						urls: urls, // 所有图片的URL列表
+						success: () => {
+							console.log('预览图片成功');
+						},
+						fail: (error) => {
+							console.error('预览图片失败:', error);
+							uni.showToast({
+								title: '预览失败',
+								icon: 'none'
+							});
+						}
+					});
+				} catch (error) {
+					console.error('处理图片预览失败:', error);
+					uni.showToast({
+						title: error.message || '预览失败',
+						icon: 'none'
+					});
 				}
 			}
 		}
@@ -1490,6 +1495,15 @@
 					}
 				}
 			}
+		}
+	}
+
+	.switch-image {
+		width: 100%;
+		height: 100%;
+		/* 添加点击反馈 */
+		&:active {
+			opacity: 0.8;
 		}
 	}
 </style>
