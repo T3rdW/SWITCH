@@ -42,13 +42,13 @@ const _sfc_main = {
     }
   },
   onLoad(options) {
-    common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:161", "详情页面加载, 参数:", options);
+    common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:166", "详情页面加载, 参数:", options);
     common_vendor.index.$on("switchData", this.handleSwitchData);
     if (options.id) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:167", "准备使用 ID 加载数据:", options.id);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:172", "准备使用 ID 加载数据:", options.id);
       setTimeout(() => {
         if (!this.switchData._id) {
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:171", "未收到数据，从服务器加载");
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:176", "未收到数据，从服务器加载");
           this.loadSwitchDataById(options.id);
         }
       }, 200);
@@ -60,24 +60,24 @@ const _sfc_main = {
   methods: {
     // 处理图片加载成功
     handleImageLoad(index) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:186", "图片加载成功:", index, {
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:191", "图片加载成功:", index, {
         fileID: this.switchImages[index].fileID,
         type: this.switchImages[index].type
       });
     },
     // 处理传递来的轴体数据
     handleSwitchData(data) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:194", "接收到轴体数据:", data);
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:196", "原始 preview_images:", data.preview_images);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:199", "接收到轴体数据:", data);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:201", "原始 preview_images:", data.preview_images);
       if (this.switchData._id === data._id) {
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:200", "已有相同数据，跳过更新");
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:205", "已有相同数据，跳过更新");
         return;
       }
       this.switchData = data;
       if (Array.isArray(data.preview_images)) {
         this.switchImages = data.preview_images.map((img) => {
           if (!img || !img.fileID) {
-            common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:210", "发现无效图片数据，使用默认图片:", img);
+            common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:215", "发现无效图片数据，使用默认图片:", img);
             return {
               fileID: "/static/default_switch.webp",
               type: "detail",
@@ -88,9 +88,9 @@ const _sfc_main = {
           }
           return img;
         });
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:221", "处理后的图片数组:", this.switchImages);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:226", "处理后的图片数组:", this.switchImages);
       } else {
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:223", "preview_images 不是数组:", data.preview_images);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:228", "preview_images 不是数组:", data.preview_images);
         this.switchImages = [{
           fileID: "/static/default_switch.webp",
           type: "detail",
@@ -146,7 +146,7 @@ const _sfc_main = {
         const beijingDate = new Date(date.getTime() + 8 * 60 * 60 * 1e3);
         return beijingDate.toISOString().slice(0, 19).replace("Z", "");
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:297", "时间格式化失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:302", "时间格式化失败:", e);
         return time;
       }
     },
@@ -164,40 +164,40 @@ const _sfc_main = {
     // 压缩图片
     async compressImage(tempFilePath) {
       try {
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:318", "开始压缩图片:", tempFilePath);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:323", "开始压缩图片:", tempFilePath);
         const ext = tempFilePath.split(".").pop().toLowerCase();
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:322", "图片格式:", ext);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:327", "图片格式:", ext);
         const fs = common_vendor.wx$1.getFileSystemManager();
         if (!tempFilePath || typeof tempFilePath !== "string") {
           throw new Error("无效的文件路径");
         }
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:333", "准备获取图片信息...");
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:338", "准备获取图片信息...");
         const imageInfo = await new Promise((resolve, reject) => {
           common_vendor.wx$1.getImageInfo({
             src: tempFilePath,
             success: (res) => {
-              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:338", "获取图片信息成功:", res);
+              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:343", "获取图片信息成功:", res);
               resolve(res);
             },
             fail: (error) => {
-              common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:342", "获取图片信息失败:", error);
+              common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:347", "获取图片信息失败:", error);
               reject(new Error("获取图片信息失败"));
             }
           });
         });
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:347", "原始图片信息:", imageInfo);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:352", "原始图片信息:", imageInfo);
         const originalFileInfo = await new Promise((resolve, reject) => {
           fs.getFileInfo({
             filePath: tempFilePath,
             success: (res) => {
-              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:354", "获取文件大小成功:", res);
+              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:359", "获取文件大小成功:", res);
               resolve(res);
             },
             fail: reject
           });
         });
         const originalSize = (originalFileInfo.size / 1024).toFixed(2);
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:361", `原始图片大小: ${originalSize}KB, 尺寸: ${imageInfo.width}x${imageInfo.height}`);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:366", `原始图片大小: ${originalSize}KB, 尺寸: ${imageInfo.width}x${imageInfo.height}`);
         let targetWidth = imageInfo.width;
         let targetHeight = imageInfo.height;
         const maxSize = 1024;
@@ -207,23 +207,23 @@ const _sfc_main = {
         if (targetWidth > maxSize || targetHeight > maxSize) {
           const maxDimension = Math.max(targetWidth, targetHeight);
           scale = maxSize / maxDimension;
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:378", "图片需要缩小，缩放比例:", scale);
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:383", "图片需要缩小，缩放比例:", scale);
         }
         if (targetWidth < minSize && targetHeight < minSize) {
           const minDimension = Math.min(targetWidth, targetHeight);
           scale = minSize / minDimension;
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:386", "图片需要放大，缩放比例:", scale);
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:391", "图片需要放大，缩放比例:", scale);
         }
         if (scale !== 1) {
           targetWidth = Math.round(targetWidth * scale);
           targetHeight = Math.round(targetHeight * scale);
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:393", "应用缩放后的尺寸:", {
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:398", "应用缩放后的尺寸:", {
             width: targetWidth,
             height: targetHeight,
             scale
           });
         }
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:400", "计算后的尺寸:", { width: targetWidth, height: targetHeight });
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:405", "计算后的尺寸:", { width: targetWidth, height: targetHeight });
         const compressedPath = await new Promise((resolve, reject) => {
           common_vendor.wx$1.compressImage({
             src: tempFilePath,
@@ -231,7 +231,7 @@ const _sfc_main = {
             compressedWidth: targetWidth,
             compressHeight: targetHeight,
             success: (res) => {
-              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:410", "压缩图片成功:", res);
+              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:415", "压缩图片成功:", res);
               resolve(res);
             },
             fail: reject
@@ -252,14 +252,14 @@ const _sfc_main = {
           });
         });
         const compressedSize = (finalFileInfo.size / 1024).toFixed(2);
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:436", `压缩完成:
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:441", `压缩完成:
 						原始大小: ${originalSize}KB (${imageInfo.width}x${imageInfo.height})
 						压缩后大小: ${compressedSize}KB (${compressedInfo.width}x${compressedInfo.height})
 						压缩率: ${((1 - finalFileInfo.size / originalFileInfo.size) * 100).toFixed(2)}%
 					`);
         return compressedPath.tempFilePath;
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:444", "压缩图片失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:449", "压缩图片失败:", e);
         return tempFilePath;
       }
     },
@@ -345,7 +345,7 @@ const _sfc_main = {
           filePath: compressedPath,
           cloudPath
         });
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:575", "文件上传成功:", uploadRes);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:580", "文件上传成功:", uploadRes);
         const imageInfo = {
           fileID: uploadRes.fileID,
           type: "detail",
@@ -374,7 +374,7 @@ const _sfc_main = {
           icon: "success"
         });
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:616", "添加图片失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:621", "添加图片失败:", e);
         common_vendor.index.showToast({
           title: e.message || "添加失败",
           icon: "none"
@@ -395,13 +395,13 @@ const _sfc_main = {
           }
         });
         if (result.result.errCode === 0) {
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:640", "文件删除成功:", fileID, result);
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:645", "文件删除成功:", fileID, result);
           return true;
         } else {
           throw new Error(result.result.errMsg);
         }
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:646", "文件删除失败:", error);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:651", "文件删除失败:", error);
         return false;
       }
     },
@@ -424,7 +424,7 @@ const _sfc_main = {
           });
         });
         const tempFilePath = res.tempFilePaths[0];
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:673", "选择的图片:", tempFilePath);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:678", "选择的图片:", tempFilePath);
         const compressedPath = await this.compressImage(tempFilePath);
         const originalExt = "jpg";
         const fileName = this.getImageFileName("detail", originalExt);
@@ -461,10 +461,10 @@ const _sfc_main = {
         common_vendor.index.showToast({ title: "更换成功" });
       } catch (e) {
         if (e.message === "cancel") {
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:735", "用户取消选择图片");
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:740", "用户取消选择图片");
           return;
         }
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:739", "编辑图片失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:744", "编辑图片失败:", e);
         common_vendor.index.showToast({
           title: "编辑图片失败",
           icon: "none"
@@ -476,9 +476,9 @@ const _sfc_main = {
     // 处理删除图片
     async handleDeleteImage() {
       try {
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:752", "开始删除图片操作");
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:757", "开始删除图片操作");
         const currentImage = this.switchImages[this.currentImageIndex];
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:755", "当前图片信息:", currentImage);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:760", "当前图片信息:", currentImage);
         if (!currentImage.fileID) {
           common_vendor.index.showToast({
             title: "默认图片不能删除",
@@ -493,10 +493,10 @@ const _sfc_main = {
           confirmColor: "#f44336"
         });
         if (!confirmRes.confirm) {
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:775", "用户取消删除");
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:780", "用户取消删除");
           return;
         }
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:779", "准备调用云函数删除图片:", {
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:784", "准备调用云函数删除图片:", {
           switchId: this.switchData._id,
           imageIndex: this.currentImageIndex,
           fileID: currentImage.fileID
@@ -510,7 +510,7 @@ const _sfc_main = {
             fileID: currentImage.fileID
           }
         });
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:796", "云函数返回结果:", result);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:801", "云函数返回结果:", result);
         if (!result || result.errCode !== 0) {
           throw new Error((result == null ? void 0 : result.errMsg) || "删除失败");
         }
@@ -529,7 +529,7 @@ const _sfc_main = {
           icon: "success"
         });
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:826", "删除图片失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:831", "删除图片失败:", e);
         common_vendor.index.showToast({
           title: e.message || "删除失败",
           icon: "none"
@@ -538,7 +538,7 @@ const _sfc_main = {
     },
     // 处理图片加载错误
     handleImageError(index) {
-      common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:836", "图片加载失败:", index, {
+      common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:841", "图片加载失败:", index, {
         fileID: this.switchImages[index].fileID,
         type: this.switchImages[index].type
       });
@@ -689,7 +689,7 @@ const _sfc_main = {
           icon: "success"
         });
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1020", "修改图片类型失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1025", "修改图片类型失败:", e);
         common_vendor.index.showToast({
           title: "修改失败",
           icon: "none"
@@ -752,7 +752,7 @@ const _sfc_main = {
           icon: "success"
         });
       } catch (e2) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1106", "修改图片类型失败:", e2);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1111", "修改图片类型失败:", e2);
         common_vendor.index.showToast({
           title: "修改失败",
           icon: "none"
@@ -775,7 +775,7 @@ const _sfc_main = {
           throw new Error((result == null ? void 0 : result.errMsg) || "加载失败");
         }
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1131", "加载数据失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1136", "加载数据失败:", e);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -803,10 +803,10 @@ const _sfc_main = {
           urls,
           // 所有图片的URL列表
           success: () => {
-            common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:1169", "预览图片成功");
+            common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:1174", "预览图片成功");
           },
           fail: (error) => {
-            common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1172", "预览图片失败:", error);
+            common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1177", "预览图片失败:", error);
             common_vendor.index.showToast({
               title: "预览失败",
               icon: "none"
@@ -814,9 +814,66 @@ const _sfc_main = {
           }
         });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1180", "处理图片预览失败:", error);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1185", "处理图片预览失败:", error);
         common_vendor.index.showToast({
           title: error.message || "预览失败",
+          icon: "none"
+        });
+      }
+    },
+    // 处理设置主图
+    async handleSetMainImage() {
+      try {
+        const currentIndex = this.currentImageIndex;
+        const allImages = this.switchImages;
+        if (currentIndex === 0) {
+          common_vendor.index.showToast({
+            title: "已经是主图",
+            icon: "none"
+          });
+          return;
+        }
+        const confirmRes = await common_vendor.index.showModal({
+          title: "设为主图",
+          content: "确定要将当前图片设为主图吗？",
+          confirmText: "确定",
+          confirmColor: "#4CAF50"
+        });
+        if (!confirmRes.confirm) {
+          return;
+        }
+        const currentImage = allImages[currentIndex];
+        const newImages = [...allImages];
+        newImages.splice(currentIndex, 1);
+        newImages.unshift({
+          ...currentImage,
+          type: "detail",
+          fileName: "main_image.jpg",
+          updateTime: this.getBeiJingISOString()
+        });
+        const { result: updateResult } = await common_vendor.er.callFunction({
+          name: "switchApi",
+          data: {
+            action: "updateSwitchImages",
+            switchId: this.switchData._id,
+            images: newImages
+          }
+        });
+        if (!updateResult || updateResult.errCode !== 0) {
+          throw new Error((updateResult == null ? void 0 : updateResult.errMsg) || "设置失败");
+        }
+        this.switchImages = newImages;
+        this.switchData.preview_images = [...this.switchImages];
+        this.currentImageIndex = 0;
+        this.$forceUpdate();
+        common_vendor.index.showToast({
+          title: "设置成功",
+          icon: "success"
+        });
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1265", "设置主图失败:", e);
+        common_vendor.index.showToast({
+          title: "设置失败",
           icon: "none"
         });
       }
@@ -865,14 +922,18 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
   }, $data.switchImages.length ? {
     q: common_vendor.o((...args) => $options.handleEditConfirm && $options.handleEditConfirm(...args))
   } : {}, {
-    r: $data.switchImages.length
-  }, $data.switchImages.length ? {
-    s: common_vendor.o((...args) => $options.handleDeleteImage && $options.handleDeleteImage(...args))
+    r: $data.switchImages.length > 1 && $data.currentImageIndex !== 0
+  }, $data.switchImages.length > 1 && $data.currentImageIndex !== 0 ? {
+    s: common_vendor.o((...args) => $options.handleSetMainImage && $options.handleSetMainImage(...args))
   } : {}, {
-    t: common_vendor.o(($event) => $data.isEditing = false),
-    v: $data.switchImages.length > 1
+    t: $data.switchImages.length
+  }, $data.switchImages.length ? {
+    v: common_vendor.o((...args) => $options.handleDeleteImage && $options.handleDeleteImage(...args))
+  } : {}, {
+    w: common_vendor.o(($event) => $data.isEditing = false),
+    x: $data.switchImages.length > 1
   }, $data.switchImages.length > 1 ? {
-    w: common_vendor.f($data.switchImages, (_, index, i0) => {
+    y: common_vendor.f($data.switchImages, (_, index, i0) => {
       return {
         a: index,
         b: common_vendor.n({
@@ -882,8 +943,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       };
     })
   } : {}) : {}, {
-    x: common_vendor.o((...args) => $options.handleTriggerTap && $options.handleTriggerTap(...args)),
-    y: common_vendor.f($data.switchImages, (image, index, i0) => {
+    z: common_vendor.o((...args) => $options.handleTriggerTap && $options.handleTriggerTap(...args)),
+    A: common_vendor.f($data.switchImages, (image, index, i0) => {
       return common_vendor.e({
         a: image.fileID ? image.fileID : "/static/default_switch.webp",
         b: common_vendor.o(($event) => $options.handleImageError(index), index),
@@ -896,91 +957,91 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
         g: index
       });
     }),
-    z: !$data.isEditing,
-    A: common_vendor.o((...args) => $options.handleSwiperChange && $options.handleSwiperChange(...args)),
-    B: common_vendor.p({
+    B: !$data.isEditing,
+    C: common_vendor.o((...args) => $options.handleSwiperChange && $options.handleSwiperChange(...args)),
+    D: common_vendor.p({
       title: "轴体名称",
       ["right-text"]: $data.switchData.switch_name || "暂无"
     }),
-    C: common_vendor.p({
+    E: common_vendor.p({
       title: "代工厂",
       ["right-text"]: $data.switchData.manufacturer || "暂无"
     }),
-    D: common_vendor.p({
+    F: common_vendor.p({
       title: "轴体分类",
       ["right-text"]: $data.switchData.switch_type || "暂无"
     }),
-    E: common_vendor.p({
+    G: common_vendor.p({
       title: "上市时间",
       ["right-text"]: $data.switchData.release_date || "暂无"
     }),
-    F: common_vendor.p({
+    H: common_vendor.p({
       title: "价格",
       ["right-text"]: $options.getPriceText($data.switchData.price)
     }),
-    G: common_vendor.p({
+    I: common_vendor.p({
       title: "轴心材质",
       ["right-text"]: $data.switchData.stem_material || "暂无"
     }),
-    H: common_vendor.p({
+    J: common_vendor.p({
       title: "上盖材质",
       ["right-text"]: $data.switchData.top_housing_material || "暂无"
     }),
-    I: common_vendor.p({
+    K: common_vendor.p({
       title: "底壳材质",
       ["right-text"]: $data.switchData.bottom_housing_material || "暂无"
     }),
-    J: common_vendor.p({
+    L: common_vendor.p({
       title: "触发压力",
       ["right-text"]: $options.getForceText($data.switchData.actuation_force)
     }),
-    K: common_vendor.p({
+    M: common_vendor.p({
       title: "触发行程",
       ["right-text"]: $options.getDistanceText($data.switchData.actuation_travel)
     }),
-    L: common_vendor.p({
+    N: common_vendor.p({
       title: "触底压力",
       ["right-text"]: $options.getForceText($data.switchData.bottom_force)
     }),
-    M: common_vendor.p({
+    O: common_vendor.p({
       title: "触底行程",
       ["right-text"]: $options.getDistanceText($data.switchData.bottom_out_travel)
     }),
-    N: common_vendor.p({
+    P: common_vendor.p({
       title: "总行程",
       ["right-text"]: $options.getDistanceText($data.switchData.total_travel)
     }),
-    O: common_vendor.p({
+    Q: common_vendor.p({
       title: "弹簧长度",
       ["right-text"]: $data.switchData.spring_length || "暂无"
     }),
-    P: common_vendor.p({
+    R: common_vendor.p({
       title: "出厂润滑",
       ["right-text"]: $data.switchData.factory_lube ? "是" : "否"
     }),
-    Q: common_vendor.p({
+    S: common_vendor.p({
       title: "寿命",
       ["right-text"]: $data.switchData.lifespan || "暂无"
     }),
-    R: common_vendor.p({
+    T: common_vendor.p({
       title: "更新时间",
       ["right-text"]: $options.formatTime($data.switchData.update_time)
     }),
-    S: common_vendor.p({
+    U: common_vendor.p({
       title: "数据来源",
       ["right-text"]: $data.switchData.data_source || "暂无"
     }),
-    T: common_vendor.p({
+    V: common_vendor.p({
       keyboards: $options.getRelatedKeyboards($data.switchData.related_keyboards)
     }),
-    U: common_vendor.p({
+    W: common_vendor.p({
       title: "停产",
       ["right-text"]: $data.switchData.discontinued ? "是" : "否"
     }),
-    V: common_vendor.p({
+    X: common_vendor.p({
       remark: $data.switchData.remark || "暂无"
     }),
-    W: common_vendor.p({
+    Y: common_vendor.p({
       title: "审核状态",
       ["right-text"]: $data.switchData.audit_status || "暂无"
     })

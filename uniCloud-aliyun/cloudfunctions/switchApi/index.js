@@ -15,6 +15,8 @@ exports.main = async (event, context) => {
 			return await addSwitch(event.data)
 		case 'updateSwitch':
 			return await updateSwitch(event)
+		case 'updateSwitchImages':
+			return await updateSwitchImages(event)
 		case 'getAll':
 			console.log('执行获取所有数据操作');
 			return await getAllSwitches()
@@ -484,6 +486,42 @@ async function deleteCloudFile(event) {
 		return {
 			errCode: -1,
 			errMsg: '删除失败: ' + e.message
+		}
+	}
+}
+
+// 更新轴体图片数组
+async function updateSwitchImages(event) {
+	const { switchId, images } = event;
+
+	// 参数验证
+	if (!switchId || !Array.isArray(images)) {
+		return {
+			errCode: 1,
+			errMsg: '参数不完整或格式错误'
+		}
+	}
+
+	try {
+		// 更新数据库
+		const res = await collection.doc(switchId).update({
+			preview_images: images,
+			update_time: new Date().toISOString()
+		});
+
+		return {
+			errCode: 0,
+			errMsg: '更新成功',
+			data: {
+				updated: res.updated,
+				modifiedCount: res.modifiedCount
+			}
+		}
+	} catch (e) {
+		console.error('更新图片数组失败:', e);
+		return {
+			errCode: 1,
+			errMsg: e.message || '更新失败'
 		}
 	}
 }

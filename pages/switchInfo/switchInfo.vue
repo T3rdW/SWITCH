@@ -44,6 +44,11 @@
 						<button class="btn" @tap="handleEditConfirm" v-if="switchImages.length">更换图片</button>
 					</view>
 					<view class="btn-row">
+						<button
+							class="btn set-main"
+							@tap="handleSetMainImage"
+							v-if="switchImages.length > 1 && currentImageIndex !== 0"
+						>设为主图</button>
 						<button class="btn delete" @tap="handleDeleteImage" v-if="switchImages.length">删除图片</button>
 						<button class="btn cancel" @tap="isEditing = false">取消</button>
 					</view>
@@ -1180,6 +1185,86 @@
 					console.error('处理图片预览失败:', error);
 					uni.showToast({
 						title: error.message || '预览失败',
+						icon: 'none'
+					});
+				}
+			},
+
+			// 处理设置主图
+			async handleSetMainImage() {
+				try {
+					// 获取当前图片的索引
+					const currentIndex = this.currentImageIndex;
+
+					// 获取所有图片
+					const allImages = this.switchImages;
+
+					// 如果当前图片是主图，不需要设置
+					if (currentIndex === 0) {
+						uni.showToast({
+							title: '已经是主图',
+							icon: 'none'
+						});
+						return;
+					}
+
+					// 确认设置
+					const confirmRes = await uni.showModal({
+						title: '设为主图',
+						content: '确定要将当前图片设为主图吗？',
+						confirmText: '确定',
+						confirmColor: '#4CAF50'
+					});
+
+					if (!confirmRes.confirm) {
+						return;
+					}
+
+					// 将当前图片设置为主图
+					const currentImage = allImages[currentIndex];
+					// 创建新的图片数组
+					const newImages = [...allImages];
+					// 移除当前图片
+					newImages.splice(currentIndex, 1);
+					// 将当前图片插入到数组开头
+					newImages.unshift({
+						...currentImage,
+						type: 'detail',
+						fileName: 'main_image.jpg',
+						updateTime: this.getBeiJingISOString()
+					});
+
+					// 更新数据库
+					const { result: updateResult } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'updateSwitchImages',
+							switchId: this.switchData._id,
+							images: newImages
+						}
+					});
+
+					if (!updateResult || updateResult.errCode !== 0) {
+						throw new Error(updateResult?.errMsg || '设置失败');
+					}
+
+					// 更新本地数据
+					this.switchImages = newImages;
+					this.switchData.preview_images = [...this.switchImages];
+					// 更新当前索引为0（主图位置）
+					this.currentImageIndex = 0;
+
+					// 强制更新视图
+					this.$forceUpdate();
+
+					uni.showToast({
+						title: '设置成功',
+						icon: 'success'
+					});
+				} catch (e) {
+					console.error('设置主图失败:', e);
+					uni.showToast({
+						title: '设置失败',
 						icon: 'none'
 					});
 				}
