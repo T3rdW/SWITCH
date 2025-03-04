@@ -1,16 +1,57 @@
 <template>
 	<view class="container">
-		<!-- 图片管理按钮 - 隐藏式触发区域 -->
-		<view class="image-manage-trigger" @tap="triggerCount++">
-			<view v-if="showImageManage" class="manage-buttons">
-				<button class="btn" @tap="handleAddImage">添加图片</button>
-				<button class="btn" @tap="handleEditImage">修改图片</button>
-				<button class="btn delete" @tap="handleDeleteImage">删除图片</button>
+		<!-- 图片管理遮罩层 -->
+		<view class="edit-overlay" v-if="isEditing">
+			<view class="edit-container">
+				<view class="edit-header">
+					<text class="edit-title">图片管理 {{ switchImages.length ? `(${currentImageIndex + 1}/${switchImages.length})` : '' }}</text>
+					<text class="close-btn" @tap="isEditing = false">×</text>
+				</view>
+				<view class="edit-image-container">
+					<view class="nav-btn prev" @tap="handlePrevImage" v-if="switchImages.length > 1">
+						<text class="nav-icon">‹</text>
+					</view>
+					<image
+						v-if="switchImages.length"
+						:src="currentImage.fileID || '/static/default_switch.webp'"
+						mode="aspectFit"
+						class="edit-image"
+					/>
+					<view v-else class="empty-image">
+						<text>暂无图片</text>
+					</view>
+					<view class="nav-btn next" @tap="handleNextImage" v-if="switchImages.length > 1">
+						<text class="nav-icon">›</text>
+					</view>
+				</view>
+				<view class="edit-buttons">
+					<view class="btn-row">
+						<button class="btn add" @tap="handleAddAndClose">添加图片</button>
+						<button class="btn" @tap="handleEditConfirm" v-if="switchImages.length">更换图片</button>
+					</view>
+					<view class="btn-row">
+						<button class="btn delete" @tap="handleDeleteImage" v-if="switchImages.length">删除图片</button>
+						<button class="btn cancel" @tap="isEditing = false">取消</button>
+					</view>
+				</view>
+				<!-- 图片指示器 -->
+				<view class="image-indicators" v-if="switchImages.length > 1">
+					<view
+						v-for="(_, index) in switchImages"
+						:key="index"
+						:class="['indicator-dot', { active: index === currentImageIndex }]"
+						@tap="handleIndicatorTap(index)"
+					></view>
+				</view>
 			</view>
 		</view>
 
+		<!-- 图片管理触发区域 -->
+		<view class="image-manage-trigger" @tap="handleTriggerTap">
+		</view>
+
 		<!-- 图片轮播 -->
-		<swiper class="swiper" circular :indicator-dots="true" :autoplay="true" :interval="3000" :duration="1000" @change="handleSwiperChange">
+		<swiper class="swiper" circular :indicator-dots="true" :autoplay="!isEditing" :interval="3000" :duration="1000" @change="handleSwiperChange">
 			<swiper-item v-for="(image, index) in switchImages" :key="index" class="swiper-item">
 				<image
 					:src="image.fileID ? image.fileID : '/static/default_switch.webp'"
@@ -75,25 +116,17 @@
 				switchData: {}, // 轴体数据
 				switchImages: [], // 轴体图片数组
 				triggerCount: 0, // 触发计数器
-				showImageManage: false, // 是否显示图片管理按钮
 				currentImageIndex: 0, // 当前显示的图片索引
+				isEditing: false, // 是否正在编辑图片
 				MAX_WIDTH: 1280,
 				MAX_HEIGHT: 1280,
 				QUALITY: 0.8
 			}
 		},
 
-		watch: {
-			// 监听触发计数器
-			triggerCount(val) {
-				if (val >= 5) { // 连续点击5次触发
-					this.showImageManage = true
-					this.triggerCount = 0
-					uni.showToast({
-						title: '已启用图片管理',
-						icon: 'none'
-					})
-				}
+		computed: {
+			currentImage() {
+				return this.switchImages[this.currentImageIndex] || {};
 			}
 		},
 
@@ -232,7 +265,9 @@
 			// 压缩图片
 			async compressImage(tempFilePath) {
 				try {
-					// 获取图片信息
+					console.log('开始压缩图片:', tempFilePath);
+
+					// 先获取图片信息
 					const imageInfo = await new Promise((resolve, reject) => {
 						uni.getImageInfo({
 							src: tempFilePath,
@@ -241,30 +276,63 @@
 						});
 					});
 
+					console.log('获取到图片信息:', imageInfo);
+
+					// 检查图片信息是否有效
+					if (!imageInfo || !imageInfo.width || !imageInfo.height) {
+						throw new Error('获取图片信息失败');
+					}
+
 					// 计算压缩后的尺寸
-					let { width, height } = imageInfo;
-					if (width > this.MAX_WIDTH || height > this.MAX_HEIGHT) {
-						const ratio = Math.min(this.MAX_WIDTH / width, this.MAX_HEIGHT / height);
-						width = Math.floor(width * ratio);
-						height = Math.floor(height * ratio);
+					let width = imageInfo.width;
+					let height = imageInfo.height;
+
+					if (width > this.MAX_WIDTH) {
+						height = Math.round((height * this.MAX_WIDTH) / width);
+						width = this.MAX_WIDTH;
+					}
+
+					if (height > this.MAX_HEIGHT) {
+						width = Math.round((width * this.MAX_HEIGHT) / height);
+						height = this.MAX_HEIGHT;
+					}
+
+					console.log('计算后的尺寸:', { width, height });
+
+					// 在微信小程序环境中，直接使用压缩API
+					if (uni.getSystemInfoSync().platform === 'mp-weixin') {
+						const compressRes = await new Promise((resolve, reject) => {
+							uni.compressImage({
+								src: tempFilePath,
+								quality: Math.round(this.QUALITY * 100),
+								success: resolve,
+								fail: reject
+							});
+						});
+
+						console.log('压缩结果:', compressRes);
+						return compressRes.tempFilePath;
 					}
 
 					// 压缩图片
 					const compressedPath = await new Promise((resolve, reject) => {
 						uni.compressImage({
 							src: tempFilePath,
-							quality: this.QUALITY,
-							compressedWidth: width,
-							compressedHeight: height,
-							success: (res) => resolve(res.tempFilePath),
+							quality: Math.round(this.QUALITY * 100),
+							width: width,
+							height: height,
+							success: resolve,
 							fail: reject
 						});
 					});
 
-					return compressedPath;
+					console.log('压缩完成:', compressedPath);
+					return compressedPath.tempFilePath;
 				} catch (e) {
 					console.error('压缩图片失败:', e);
-					throw e;
+					// 如果压缩失败，返回原图
+					console.log('返回原图:', tempFilePath);
+					return tempFilePath;
 				}
 			},
 
@@ -297,6 +365,12 @@
 						sizeType: ['original'],
 						sourceType: ['album', 'camera']
 					});
+
+					// 用户取消选择图片
+					if (!res || !res.tempFilePaths || !res.tempFilePaths.length) {
+						console.log('用户取消选择图片');
+						return;
+					}
 
 					const tempFilePath = res.tempFilePaths[0];
 					// 压缩图片
@@ -361,6 +435,12 @@
 
 					uni.showToast({ title: '添加成功' });
 				} catch (e) {
+					// 处理用户取消选择图片的情况
+					if (e.errMsg === 'chooseImage:fail cancel') {
+						console.log('用户取消选择图片');
+						return;
+					}
+
 					console.error('添加图片失败:', e);
 					uni.showToast({
 						title: '添加失败',
@@ -388,6 +468,12 @@
 						sizeType: ['original'],
 						sourceType: ['album', 'camera']
 					})
+
+					// 用户取消选择图片
+					if (!res || !res.tempFilePaths || !res.tempFilePaths.length) {
+						console.log('用户取消选择图片');
+						return;
+					}
 
 					const tempFilePath = res.tempFilePaths[0]
 					// 压缩并转换图片
@@ -432,6 +518,12 @@
 
 					uni.showToast({ title: '修改成功' });
 				} catch (e) {
+					// 处理用户取消选择图片的情况
+					if (e.errMsg === 'chooseImage:fail cancel') {
+						console.log('用户取消选择图片');
+						return;
+					}
+
 					console.error('修改图片失败:', e);
 					uni.showToast({
 						title: '修改失败',
@@ -494,6 +586,64 @@
 				if (this.switchImages[index]) {
 					this.$set(this.switchImages[index], 'fileID', '/static/default_switch.webp')
 				}
+			},
+
+			// 开始编辑图片
+			startEditing() {
+				if (!this.switchImages.length) {
+					uni.showToast({
+						title: '暂无图片',
+						icon: 'none'
+					});
+					return;
+				}
+				this.isEditing = true;
+			},
+
+			// 确认编辑图片
+			async handleEditConfirm() {
+				try {
+					await this.handleEditImage();
+					this.isEditing = false;
+				} catch (e) {
+					console.error('编辑图片失败:', e);
+				}
+			},
+
+			// 添加图片并关闭编辑框
+			async handleAddAndClose() {
+				try {
+					await this.handleAddImage();
+					this.isEditing = false;
+				} catch (e) {
+					console.error('添加图片失败:', e);
+				}
+			},
+
+			// 处理触发区域点击
+			handleTriggerTap() {
+				this.triggerCount++;
+				if (this.triggerCount >= 5) {
+					this.triggerCount = 0;
+					this.isEditing = true;
+				}
+			},
+
+			// 切换到上一张图片
+			handlePrevImage() {
+				if (this.switchImages.length <= 1) return;
+				this.currentImageIndex = (this.currentImageIndex - 1 + this.switchImages.length) % this.switchImages.length;
+			},
+
+			// 切换到下一张图片
+			handleNextImage() {
+				if (this.switchImages.length <= 1) return;
+				this.currentImageIndex = (this.currentImageIndex + 1) % this.switchImages.length;
+			},
+
+			// 点击指示器切换图片
+			handleIndicatorTap(index) {
+				this.currentImageIndex = index;
 			}
 		}
 	}
@@ -571,40 +721,176 @@
 		width: 50px;
 		height: 50px;
 		z-index: 100;
-		border: 1px solid rgba(255, 0, 0, 0.3);
-
-		.manage-buttons {
-			position: absolute;
-			top: 0;
-			right: 0;
-			padding: 10px;
-			background-color: rgba(0, 0, 0, 0.8);
-			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-			border-radius: 0 0 0 10px;
-
-			.btn {
-				margin: 8px 0;
-				padding: 5px 10px;
-				font-size: 12px;
-				background-color: #4CAF50;
-				color: white;
-				border: none;
-				border-radius: 4px;
-				width: 100%;
-				min-width: 80px;
-
-				&.delete {
-					background-color: #f44336;
-				}
-
-				&:active {
-					opacity: 0.8;
-				}
-			}
-		}
 
 		&:active {
 			background-color: rgba(255, 0, 0, 0.1);
+		}
+	}
+
+	.empty-image {
+		width: 100%;
+		height: 200px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background-color: #f5f5f5;
+		margin-bottom: 15px;
+		color: #999;
+	}
+
+	.edit-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.7);
+		z-index: 1000;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+
+		.edit-container {
+			background-color: #fff;
+			border-radius: 8px;
+			width: 90%;
+			max-width: 600px;
+			padding: 20px;
+
+			.edit-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 15px;
+
+				.edit-title {
+					font-size: 16px;
+					font-weight: bold;
+				}
+
+				.close-btn {
+					font-size: 24px;
+					color: #999;
+					padding: 0 10px;
+					cursor: pointer;
+
+					&:active {
+						opacity: 0.7;
+					}
+				}
+			}
+
+			.edit-image-container {
+				position: relative;
+				width: 100%;
+				height: 200px;
+				margin-bottom: 15px;
+				background-color: #f5f5f5;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+
+				.nav-btn {
+					position: absolute;
+					top: 50%;
+					transform: translateY(-50%);
+					width: 40px;
+					height: 40px;
+					background-color: rgba(0, 0, 0, 0.5);
+					border-radius: 50%;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					cursor: pointer;
+					z-index: 1;
+
+					&.prev {
+						left: 10px;
+					}
+
+					&.next {
+						right: 10px;
+					}
+
+					.nav-icon {
+						color: #fff;
+						font-size: 24px;
+						font-weight: bold;
+					}
+
+					&:active {
+						background-color: rgba(0, 0, 0, 0.7);
+					}
+				}
+
+				.edit-image {
+					width: 100%;
+					height: 100%;
+					object-fit: contain;
+				}
+			}
+
+			.edit-buttons {
+				display: flex;
+				flex-direction: column;
+				gap: 12px;
+
+				.btn-row {
+					display: flex;
+					gap: 10px;
+
+					.btn {
+						flex: 1;
+					}
+				}
+
+				.btn {
+					margin: 0;
+					font-size: 14px;
+					height: 40px;
+					line-height: 40px;
+
+					&.add {
+						background-color: #4CAF50;
+					}
+
+					&.delete {
+						background-color: #f44336;
+					}
+
+					&.cancel {
+						background-color: #999;
+					}
+
+					&:active {
+						opacity: 0.8;
+					}
+				}
+			}
+
+			.image-indicators {
+				display: flex;
+				justify-content: center;
+				gap: 8px;
+				margin-bottom: 15px;
+
+				.indicator-dot {
+					width: 8px;
+					height: 8px;
+					border-radius: 50%;
+					background-color: #ddd;
+					cursor: pointer;
+
+					&.active {
+						background-color: #4CAF50;
+						transform: scale(1.2);
+					}
+
+					&:active {
+						opacity: 0.8;
+					}
+				}
+			}
 		}
 	}
 </style>
