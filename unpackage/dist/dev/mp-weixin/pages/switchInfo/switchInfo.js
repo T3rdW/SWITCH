@@ -290,6 +290,7 @@ const _sfc_main = {
           common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:474", "用户取消选择图片");
           return;
         }
+        const oldFileID = this.switchImages[this.currentImageIndex].fileID;
         const tempFilePath = res.tempFilePaths[0];
         const compressedPath = await this.compressImage(tempFilePath);
         const fileName = this.getImageFileName("detail", this.currentImageIndex);
@@ -299,6 +300,16 @@ const _sfc_main = {
           filePath: compressedPath,
           cloudPath
         });
+        if (oldFileID && !oldFileID.includes("default_switch.webp")) {
+          try {
+            await common_vendor.er.deleteFile({
+              fileList: [oldFileID]
+            });
+            common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:503", "旧图片删除成功:", oldFileID);
+          } catch (deleteError) {
+            common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:505", "删除旧图片失败:", deleteError);
+          }
+        }
         const imageInfo = {
           fileID: uploadRes.fileID,
           type: "detail",
@@ -321,10 +332,10 @@ const _sfc_main = {
         common_vendor.index.showToast({ title: "修改成功" });
       } catch (e) {
         if (e.errMsg === "chooseImage:fail cancel") {
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:523", "用户取消选择图片");
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:541", "用户取消选择图片");
           return;
         }
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:527", "修改图片失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:545", "修改图片失败:", e);
         common_vendor.index.showToast({
           title: "修改失败",
           icon: "none"
@@ -349,6 +360,17 @@ const _sfc_main = {
           if (res.confirm) {
             try {
               common_vendor.index.showLoading({ title: "删除中..." });
+              const fileID = this.switchImages[this.currentImageIndex].fileID;
+              if (fileID && !fileID.includes("default_switch.webp")) {
+                try {
+                  await common_vendor.er.deleteFile({
+                    fileList: [fileID]
+                  });
+                  common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:582", "图片文件删除成功:", fileID);
+                } catch (deleteError) {
+                  common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:584", "删除图片文件失败:", deleteError);
+                }
+              }
               await common_vendor.er.callFunction({
                 name: "switchApi",
                 data: {
@@ -361,7 +383,7 @@ const _sfc_main = {
               this.loadSwitchData(this.switchData._id);
               common_vendor.index.showToast({ title: "删除成功" });
             } catch (e) {
-              common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:569", "删除图片失败:", e);
+              common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:604", "删除图片失败:", e);
               common_vendor.index.showToast({
                 title: "删除失败",
                 icon: "none"
@@ -375,7 +397,7 @@ const _sfc_main = {
     },
     // 处理图片加载错误
     handleImageError(index) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:584", "图片加载失败:", index);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:619", "图片加载失败:", index);
       if (this.switchImages[index]) {
         this.$set(this.switchImages[index], "fileID", "/static/default_switch.webp");
       }
@@ -397,7 +419,7 @@ const _sfc_main = {
         await this.handleEditImage();
         this.isEditing = false;
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:609", "编辑图片失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:644", "编辑图片失败:", e);
       }
     },
     // 添加图片并关闭编辑框
@@ -406,7 +428,7 @@ const _sfc_main = {
         await this.handleAddImage();
         this.isEditing = false;
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:619", "添加图片失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:654", "添加图片失败:", e);
       }
     },
     // 处理触发区域点击

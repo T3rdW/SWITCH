@@ -475,20 +475,37 @@
 						return;
 					}
 
+					// 保存旧图片的 fileID，用于后续删除
+					const oldFileID = this.switchImages[this.currentImageIndex].fileID;
+
 					const tempFilePath = res.tempFilePaths[0]
 					// 压缩并转换图片
 					const compressedPath = await this.compressImage(tempFilePath)
 
 					// 使用规范的文件命名
 					const fileName = this.getImageFileName('detail', this.currentImageIndex);
-					const cloudPath = fileName; // 直接使用文件名
+					const cloudPath = fileName;
 
 					uni.showLoading({ title: '上传中...' });
 
+					// 上传新图片
 					const uploadRes = await uniCloud.uploadFile({
 						filePath: compressedPath,
 						cloudPath
 					});
+
+					// 如果存在旧图片且不是默认图片，则删除
+					if (oldFileID && !oldFileID.includes('default_switch.webp')) {
+						try {
+							await uniCloud.deleteFile({
+								fileList: [oldFileID]
+							});
+							console.log('旧图片删除成功:', oldFileID);
+						} catch (deleteError) {
+							console.error('删除旧图片失败:', deleteError);
+							// 继续执行，不影响新图片的更新
+						}
+					}
 
 					// 构建新的图片信息对象
 					const imageInfo = {
@@ -499,6 +516,7 @@
 						updateTime: now
 					};
 
+					// 更新数据库
 					await uniCloud.callFunction({
 						name: 'switchApi',
 						data: {
@@ -552,6 +570,22 @@
 							try {
 								uni.showLoading({ title: '删除中...' });
 
+								// 获取要删除的图片 fileID
+								const fileID = this.switchImages[this.currentImageIndex].fileID;
+
+								// 如果存在文件且不是默认图片，则删除云存储中的文件
+								if (fileID && !fileID.includes('default_switch.webp')) {
+									try {
+										await uniCloud.deleteFile({
+											fileList: [fileID]
+										});
+										console.log('图片文件删除成功:', fileID);
+									} catch (deleteError) {
+										console.error('删除图片文件失败:', deleteError);
+									}
+								}
+
+								// 更新数据库
 								await uniCloud.callFunction({
 									name: 'switchApi',
 									data: {
@@ -562,6 +596,7 @@
 									}
 								});
 
+								// 重新加载数据
 								this.loadSwitchData(this.switchData._id);
 
 								uni.showToast({ title: '删除成功' });
