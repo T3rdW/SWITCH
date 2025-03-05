@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "轴体详情",
+  "usingComponents": {
+    "related-keyboards-item": "../../components/related-keyboards-item",
+    "remark-item": "../../components/remark-item",
+    "uni-list-item": "../../uni_modules/uni-list/components/uni-list-item/uni-list-item",
+    "uni-list": "../../uni_modules/uni-list/components/uni-list/uni-list"
+  }
+}

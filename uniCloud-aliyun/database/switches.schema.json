@@ -156,9 +156,24 @@
         },
         "audit_status": {
             "bsonType": "string",
-            "description": "审核状态",
-            "title": "审核状态",
-            "enum": ["未审核", "审核中", "已审核"]
+            "enum": ["pending", "approved", "rejected"],
+            "description": "审核状态"
+        },
+        "audit_by": {
+            "bsonType": "string",
+            "description": "审核者的openid"
+        },
+        "audit_time": {
+            "bsonType": "string",
+            "description": "审核时间"
+        },
+        "created_by": {
+            "bsonType": "string",
+            "description": "创建者的openid"
+        },
+        "updated_by": {
+            "bsonType": "string",
+            "description": "最后更新者的openid"
         },
         "related_keyboards": {
             "bsonType": "array",

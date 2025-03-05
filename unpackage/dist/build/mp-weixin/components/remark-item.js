@@ -1,0 +1,1 @@
+"use strict";const e=require("../common/vendor.js"),r={name:"RemarkItem",props:{remark:{type:String,default:"--"}}};const t=e._export_sfc(r,[["render",function(r,t,n,o,m,a){return{a:e.t(n.remark)}}]]);wx.createComponent(t);

@@ -6,10 +6,15 @@ const fs = require('fs')
 exports.main = async (event, context) => {
 	console.log('event : ', event)
 
+	// 添加基础错误处理
+	try {
+
 	switch (event.action) {
 		case 'search':
+			// 搜索不需要权限验证
 			return await searchSwitches(event.params)
 		case 'getSwitchById':
+			// 获取详情不需要权限验证
 			return await getSwitchById(event.id)
 		case 'add':
 			return await addSwitch(event.data)
@@ -111,6 +116,15 @@ exports.main = async (event, context) => {
 				errMsg: '未知操作'
 			}
 	}
+
+	} catch (error) {
+		console.error('云函数执行错误:', error)
+		return {
+			errCode: -1,
+			errMsg: '服务异常，请稍后重试',
+			error: process.env.NODE_ENV === 'development' ? error : undefined
+		}
+	}
 }
 
 // 获取所有轴体数据
@@ -149,64 +163,45 @@ async function getAllSwitches() {
 // 搜索轴体
 async function searchSwitches(params) {
 	try {
-		const {keyword, page = 1, pageSize = 20} = params
+		console.log('开始搜索，参数:', params)
+		const dbCmd = db.command
+		const query = {}
 
-		if (!keyword) {
-			return {
-				code: -1,
-				msg: '搜索关键词不能为空'
-			}
+		if (params.keyword) {
+			const keyword = params.keyword.trim()
+			// 优化搜索逻辑
+			query.$or = [
+				{
+					switch_name: new RegExp(keyword, 'i')
+				},
+				{
+					switch_name_en: new RegExp(keyword, 'i')
+				},
+				{
+					manufacturer: new RegExp(keyword, 'i')
+				}
+			]
 		}
 
-		console.log('云函数开始搜索:', {
-			keyword,
-			page,
-			pageSize
-		})
+		console.log('构建的查询条件:', query)
 
-		// 构建查询条件
-		const query = {
-			switch_name: new RegExp(keyword, 'i')
-		}
-
-		console.log('查询条件:', query)
-
-		// 先测试查询条件
-		const testCount = await collection
+		const res = await collection
 			.where(query)
-			.count()
-
-		console.log('匹配记录数:', testCount)
-
-		// 查询数据
-		const list = await collection
-			.where(query)
-			.skip((page - 1) * pageSize)
-			.limit(pageSize)
+			.orderBy('update_time', 'desc')
 			.get()
 
-		console.log('查询结果:', {
-			total: testCount.total,
-			listLength: list.data.length,
-			firstItem: list.data[0]
-		})
+		console.log('搜索结果:', res)
 
 		return {
 			errCode: 0,
-			errMsg: 'success',
-			data: {
-				data: list.data,
-				total: testCount.total,
-				pageSize,
-				page
-			}
+			errMsg: '搜索成功',
+			data: res.data
 		}
-
 	} catch (e) {
-		console.error('搜索轴体失败:', e)
+		console.error('搜索失败:', e)
 		return {
-			errCode: -1,
-			errMsg: '搜索失败: ' + e.message
+			errCode: 1,
+			errMsg: e.message || '搜索失败'
 		}
 	}
 }
