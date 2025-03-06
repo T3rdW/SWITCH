@@ -141,12 +141,14 @@
 				isEditing: false, // 是否正在编辑图片
 				isLoading: false, // 是否正在加载数据
 				imageTypeOptions: [
-					{ text: '官方图', value: 'official' },
 					{ text: '详情图', value: 'detail' },
 					{ text: '上盖图', value: 'top' },
 					{ text: '轴心图', value: 'stem' },
 					{ text: '弹簧图', value: 'spring' },
-					{ text: '更多类型...', value: 'more' }
+					{ text: '底壳图', value: 'bottom' },
+					{ text: '侧图', value: 'side' },
+					{ text: '外壳图', value: 'housing' },
+					{ text: '其他视图', value: 'other' }
 				],
 				MAX_WIDTH: 1280,
 				MAX_HEIGHT: 1280,
@@ -450,7 +452,17 @@
 			},
 
 			// 生成图片文件名
-			getImageFileName(type, originalExt = 'jpg') {
+			getImageFileName(type = 'detail', originalExt = 'jpg') {
+				// 优先使用英文名，如果没有则使用中文名
+				let switchName = this.switchData.switch_name_en || this.switchData.switch_name || 'unknown';
+
+				// 移除特殊字符，只保留字母、数字、下划线
+				const safeSwitchName = switchName
+					.replace(/\s+/g, '_')
+					.replace(/[^a-zA-Z0-9_]/g, '')
+					.replace(/_+/g, '_')
+					.replace(/^_|_$/g, '');
+
 				// 生成格式化的时间字符串：YYYYMMDD_HHMMSS
 				const now = new Date();
 				const timeString = now.getFullYear() +
@@ -463,377 +475,113 @@
 				// 生成随机字符串，避免文件名冲突
 				const random = Math.random().toString(36).substring(2, 8);
 
-				// 使用完整的类型名作为文件名前缀
-				const typePrefix = type === 'other' ?
-					`other${this.switchImages.filter(img => img.type === 'other').length + 1}` :
-					type;
-
-				// 构建文件名：类型_时间_随机码.jpg
-				return `${typePrefix}_${timeString}_${random}.${originalExt}`;
-			},
-
-			// 获取图片类型文本
-			getImageTypeText(type) {
-				const option = this.imageTypeOptions.find(opt => opt.value === type)
-				return option ? option.text : '未知类型'
-			},
-
-			// 修改图片类型
-			async handleChangeImageType() {
-				try {
-					// 第一组选项
-					const imageTypes = [
-						{ text: '官方图', value: 'official' },
-						{ text: '详情图', value: 'detail' },
-						{ text: '上盖图', value: 'top' },
-						{ text: '轴心图', value: 'stem' },
-						{ text: '弹簧图', value: 'spring' },
-						{ text: '更多类型...', value: 'more' }
-					];
-
-					const result = await new Promise((resolve, reject) => {
-						uni.showActionSheet({
-							itemList: imageTypes.map(t => t.text),
-							itemColor: '#000000',
-							success: resolve,
-							fail: (err) => {
-								if (err.errMsg.includes('fail cancel')) {
-									resolve({ tapIndex: -1 });
-								} else {
-									reject(err);
-								}
-							}
-						});
-					});
-
-					if (result.tapIndex === -1) {
-						return;
-					}
-
-					// 如果选择"更多类型"，显示第二组选项
-					let selectedType = imageTypes[result.tapIndex].value;
-					if (selectedType === 'more') {
-						// 第二组选项
-						const moreTypes = [
-							{ text: '底壳图', value: 'bottom' },
-							{ text: '侧图', value: 'side' },
-							{ text: '外壳图', value: 'housing' },
-							{ text: '其他视图', value: 'other' }
-						];
-
-						const moreResult = await new Promise((resolve, reject) => {
-							uni.showActionSheet({
-								itemList: moreTypes.map(t => t.text),
-								itemColor: '#000000',
-								success: resolve,
-								fail: (err) => {
-									if (err.errMsg.includes('fail cancel')) {
-										resolve({ tapIndex: -1 });
-									} else {
-										reject(err);
-									}
-								}
-							});
-						});
-
-						if (moreResult.tapIndex === -1 || moreTypes[moreResult.tapIndex].value === 'back') {
-							// 如果取消或选择返回，重新调用本方法
-							this.handleChangeImageType();
-							return;
-						}
-
-						selectedType = moreTypes[moreResult.tapIndex].value;
-					}
-
-					// 检查"其他视图"的数量限制
-					if (selectedType === 'other' && this.currentImage.type !== 'other') {
-						const otherViewCount = this.switchImages.filter(img => img.type === 'other').length;
-						if (otherViewCount >= 3) {
-							uni.showToast({
-								title: '其他视图最多只能有3张',
-								icon: 'none'
-							});
-							return;
-						}
-					}
-
-					// 获取原始文件扩展名
-					const originalExt = 'jpg'; // 统一使用 jpg 格式
-
-					// 生成新的文件名
-					const newFileName = this.getImageFileName(selectedType, originalExt);
-
-					// 更新图片类型
-					const imageInfo = {
-						...this.currentImage,
-						type: selectedType,
-						fileName: newFileName,
-						updateTime: this.getBeiJingISOString()
+				// 如果是其他视图类型，添加序号
+				let typePrefix = '';
+				if (type === 'other') {
+					// 获取当前其他视图的数量
+					const otherViewCount = this.switchImages.filter(img => img.type === 'other').length;
+					// 序号从1开始
+					typePrefix = `other${otherViewCount + 1}`;
+				} else {
+					// 其他类型使用原有的前缀
+					const prefixMap = {
+						detail: 'detail',
+						top: 'top',
+						stem: 'stem',
+						spring: 'spring',
+						bottom: 'bottom',
+						side: 'side',
+						housing: 'housing'
 					};
-
-					// 更新数据库
-					const { result: updateTypeResult } = await uniCloud.callFunction({
-						name: 'switchApi',
-						data: {
-							action: 'updateSwitchImage',
-							switchId: this.switchData._id,
-							imageIndex: this.currentImageIndex,
-							imageInfo: imageInfo
-						}
-					});
-
-					// 检查返回结果
-					if (!updateTypeResult || updateTypeResult.errCode !== 0) {
-						throw new Error(updateTypeResult?.errMsg || '更新失败');
-					}
-
-					// 更新本地数据
-					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
-					this.switchData.preview_images = this.switchImages;
-
-					// 强制更新视图
-					this.$forceUpdate();
-
-					uni.showToast({
-						title: '类型修改成功',
-						icon: 'success'
-					});
-				} catch (e) {
-					console.error('修改图片类型失败:', e);
-					uni.showToast({
-						title: '修改失败',
-						icon: 'none'
-					});
+					typePrefix = prefixMap[type] || 'other1';
 				}
+
+				// 构建文件名：轴体名_类型_时间_随机码.jpg
+				return `${safeSwitchName}_${typePrefix}_${timeString}_${random}.${originalExt}`;
 			},
 
-			// 获取图片类型索引
-			getTypeIndex(type) {
-				return this.imageTypeOptions.findIndex(option => option.value === type);
-			},
+			// 从文件名解析图片类型
+			getTypeFromFileName(fileName) {
+				if (!fileName) return 'detail';
 
-			// 处理类型变化
-			async handleTypeChange(e) {
-				const index = e.detail.value
-				const newType = this.imageTypeOptions[index].value
-
-				// 更新图片类型
-				const imageInfo = {
-					...this.currentImage,
-					type: newType,
-					updateTime: this.getBeiJingISOString()
+				// 解析文件名中的类型标识
+				const typeMatches = {
+					'detail': 'detail',
+					'top': 'top',
+					'stem': 'stem',
+					'spring': 'spring',
+					'bottom': 'bottom',
+					'side': 'side',
+					'housing': 'housing',
+					'other1': 'other',
+					'other2': 'other',
+					'other3': 'other'
 				};
 
-				// 更新数据库
-				const { result: updateTypeResult } = await uniCloud.callFunction({
-					name: 'switchApi',
-					data: {
-						action: 'updateSwitchImage',
-						switchId: this.switchData._id,
-						imageIndex: this.currentImageIndex,
-						imageInfo: imageInfo
+				// 遍历所有可能的类型标识
+				for (const [typeId, type] of Object.entries(typeMatches)) {
+					if (fileName.includes(`_${typeId}_`)) {
+						return type;
 					}
-				});
-
-				// 检查返回结果
-				if (!updateTypeResult || updateTypeResult.errCode !== 0) {
-					throw new Error(updateTypeResult?.errMsg || '更新失败');
 				}
 
-				// 更新本地数据
-				this.$set(this.switchImages, this.currentImageIndex, imageInfo);
-				this.switchData.preview_images = [...this.switchImages];
+				// 兼容旧的缩写格式
+				const legacyMatches = {
+					'_dt_': 'detail',
+					'_tp_': 'top',
+					'_st_': 'stem',
+					'_sp_': 'spring',
+					'_bt_': 'bottom',
+					'_sd_': 'side',
+					'_hs_': 'housing',
+					'_ot1_': 'other',
+					'_ot2_': 'other',
+					'_ot3_': 'other'
+				};
 
-				// 强制更新视图
-				this.$forceUpdate();
-
-				uni.showToast({
-					title: '类型修改成功',
-					icon: 'success'
-				});
-			},
-
-			// 添加通过 ID 加载数据的方法
-			async loadSwitchDataById(id) {
-				try {
-					const { result } = await uniCloud.callFunction({
-						name: 'switchApi',
-						data: {
-							action: 'getSwitchById',
-							id: id
-						}
-					})
-
-					if (result && result.errCode === 0 && result.data) {
-						this.handleSwitchData(result.data)
-					} else {
-						throw new Error(result?.errMsg || '加载失败')
+				// 遍历所有旧格式的类型标识
+				for (const [typeId, type] of Object.entries(legacyMatches)) {
+					if (fileName.includes(typeId)) {
+						return type;
 					}
-				} catch (e) {
-					console.error('加载数据失败:', e)
-					uni.showToast({
-						title: '加载失败',
-						icon: 'none'
-					})
-				}
-			},
-
-			// 处理图片点击预览
-			async handleImageTap(index) {
-				// 如果正在编辑模式，不进行预览
-				if (this.isEditing) {
-					return;
 				}
 
-				try {
-					// 过滤有效的图片URL
-					const urls = this.switchImages
-						.filter(img => img.fileID && img.fileID !== '/static/default_switch.webp')
-						.map(img => img.fileID);
-
-					// 如果没有有效的图片URL
-					if (urls.length === 0) {
-						uni.showToast({
-							title: '无可预览图片',
-							icon: 'none'
-						});
-						return;
-					}
-
-					// 获取当前图片的URL
-					const currentFileID = this.switchImages[index].fileID;
-
-					// 使用微信的预览图片API
-					wx.previewImage({
-						current: currentFileID, // 当前显示图片的URL
-						urls: urls, // 所有图片的URL列表
-						success: () => {
-							console.log('预览图片成功');
-						},
-						fail: (error) => {
-							console.error('预览图片失败:', error);
-							uni.showToast({
-								title: '预览失败',
-								icon: 'none'
-							});
-						}
-					});
-				} catch (error) {
-					console.error('处理图片预览失败:', error);
-					uni.showToast({
-						title: error.message || '预览失败',
-						icon: 'none'
-					});
-				}
-			},
-
-			// 处理设置主图
-			async handleSetMainImage() {
-				try {
-					// 获取当前图片的索引
-					const currentIndex = this.currentImageIndex;
-
-					// 获取所有图片
-					const allImages = this.switchImages;
-
-					// 如果当前图片是主图，不需要设置
-					if (currentIndex === 0) {
-						uni.showToast({
-							title: '已经是主图',
-							icon: 'none'
-						});
-						return;
-					}
-
-					// 确认设置
-					const confirmRes = await uni.showModal({
-						title: '设为主图',
-						content: '确定要将当前图片设为主图吗？',
-						confirmText: '确定',
-						confirmColor: '#4CAF50'
-					});
-
-					if (!confirmRes.confirm) {
-						return;
-					}
-
-					// 将当前图片设置为主图
-					const currentImage = allImages[currentIndex];
-					// 创建新的图片数组
-					const newImages = [...allImages];
-					// 移除当前图片
-					newImages.splice(currentIndex, 1);
-					// 将当前图片插入到数组开头
-					newImages.unshift({
-						...currentImage,
-						type: 'detail',
-						fileName: 'main_image.jpg',
-						updateTime: this.getBeiJingISOString()
-					});
-
-					// 更新数据库
-					const { result: updateResult } = await uniCloud.callFunction({
-						name: 'switchApi',
-						data: {
-							action: 'updateSwitchImages',
-							switchId: this.switchData._id,
-							images: newImages
-						}
-					});
-
-					if (!updateResult || updateResult.errCode !== 0) {
-						throw new Error(updateResult?.errMsg || '设置失败');
-					}
-
-					// 更新本地数据
-					this.switchImages = newImages;
-					this.switchData.preview_images = [...this.switchImages];
-					// 更新当前索引为0（主图位置）
-					this.currentImageIndex = 0;
-
-					// 强制更新视图
-					this.$forceUpdate();
-
-					uni.showToast({
-						title: '设置成功',
-						icon: 'success'
-					});
-				} catch (e) {
-					console.error('设置主图失败:', e);
-					uni.showToast({
-						title: '设置失败',
-						icon: 'none'
-					});
-				}
+				// 默认返回详情图类型
+				return 'detail';
 			},
 
 			// 处理添加图片
 			async handleAddImage() {
 				try {
-					// 选择图片
-					const chooseResult = await uni.chooseImage({
+					const res = await uni.chooseImage({
 						count: 1,
 						sizeType: ['compressed'],
 						sourceType: ['album', 'camera']
 					});
 
-					// 压缩图片
-					const compressedImage = await this.compressImage(chooseResult.tempFilePaths[0]);
+					const tempFilePath = res.tempFilePaths[0];
 
-					// 生成文件名
-					const fileName = `${Date.now()}_${this.switchData.switch_name}_image.jpg`;
+					// 压缩图片
+					const compressedPath = await this.compressImage(tempFilePath);
+
+					// 获取原始文件扩展名
+					const originalExt = 'jpg'; // 统一使用 jpg 格式
+
+					// 使用规范的文件命名
+					const fileName = this.getImageFileName('detail', originalExt);
+					const cloudPath = fileName;
 
 					// 上传到云存储
-					const uploadResult = await uniCloud.uploadFile({
-						filePath: compressedImage,
-						cloudPath: `switches/${this.switchData._id}/${fileName}`
+					const uploadRes = await uniCloud.uploadFile({
+						filePath: compressedPath,
+						cloudPath: cloudPath,
 					});
 
-					console.log('文件上传成功:', uploadResult);
+					console.log('文件上传成功:', uploadRes);
 
 					// 构建图片信息对象
 					const imageInfo = {
-						fileID: uploadResult.fileID,
+						fileID: uploadRes.fileID,
 						type: 'detail',
 						fileName: fileName,
 						uploadTime: this.getBeiJingISOString(),
@@ -1137,6 +885,390 @@
 			handleIndicatorTap(index) {
 				this.currentImageIndex = index;
 			},
+
+			// 获取图片类型文本
+			getImageTypeText(type) {
+				const typeMap = {
+					detail: '详情图',
+					top: '上盖图',
+					stem: '轴心图',
+					spring: '弹簧图',
+					bottom: '底壳图',
+					side: '侧图',
+					housing: '外壳图',
+					other: '其他视图'
+				};
+				return typeMap[type] || type;
+			},
+
+			// 修改图片类型
+			async handleChangeImageType() {
+				try {
+					// 第一组选项
+					const imageTypes = [
+						{ text: '详情图', value: 'detail' },
+						{ text: '上盖图', value: 'top' },
+						{ text: '轴心图', value: 'stem' },
+						{ text: '弹簧图', value: 'spring' },
+						{ text: '更多类型...', value: 'more' }
+					];
+
+					const result = await new Promise((resolve, reject) => {
+						uni.showActionSheet({
+							itemList: imageTypes.map(t => t.text),
+							itemColor: '#000000',
+							success: resolve,
+							fail: (err) => {
+								if (err.errMsg.includes('fail cancel')) {
+									resolve({ tapIndex: -1 });
+								} else {
+									reject(err);
+								}
+							}
+						});
+					});
+
+					if (result.tapIndex === -1) {
+						return;
+					}
+
+					// 如果选择"更多类型"，显示第二组选项
+					let selectedType = imageTypes[result.tapIndex].value;
+					if (selectedType === 'more') {
+						// 第二组选项
+						const moreTypes = [
+							{ text: '底壳图', value: 'bottom' },
+							{ text: '侧图', value: 'side' },
+							{ text: '外壳图', value: 'housing' },
+							{ text: '其他视图', value: 'other' },
+							{ text: '返回上级', value: 'back' }
+						];
+
+						const moreResult = await new Promise((resolve, reject) => {
+							uni.showActionSheet({
+								itemList: moreTypes.map(t => t.text),
+								itemColor: '#000000',
+								success: resolve,
+								fail: (err) => {
+									if (err.errMsg.includes('fail cancel')) {
+										resolve({ tapIndex: -1 });
+									} else {
+										reject(err);
+									}
+								}
+							});
+						});
+
+						if (moreResult.tapIndex === -1 || moreTypes[moreResult.tapIndex].value === 'back') {
+							// 如果取消或选择返回，重新调用本方法
+							this.handleChangeImageType();
+							return;
+						}
+
+						selectedType = moreTypes[moreResult.tapIndex].value;
+					}
+
+					// 检查"其他视图"的数量限制
+					if (selectedType === 'other' && this.currentImage.type !== 'other') {
+						const otherViewCount = this.switchImages.filter(img => img.type === 'other').length;
+						if (otherViewCount >= 3) {
+							uni.showToast({
+								title: '其他视图最多只能有3张',
+								icon: 'none'
+							});
+							return;
+						}
+					}
+
+					// 获取原始文件扩展名
+					const originalExt = 'jpg'; // 统一使用 jpg 格式
+
+					// 生成新的文件名
+					const newFileName = this.getImageFileName(selectedType, originalExt);
+
+					// 更新图片类型
+					const imageInfo = {
+						...this.currentImage,
+						type: selectedType,
+						fileName: newFileName,
+						updateTime: this.getBeiJingISOString()
+					};
+
+					// 更新数据库
+					const { result: updateTypeResult } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'updateSwitchImage',
+							switchId: this.switchData._id,
+							imageIndex: this.currentImageIndex,
+							imageInfo: imageInfo
+						}
+					});
+
+					// 检查返回结果
+					if (!updateTypeResult || updateTypeResult.errCode !== 0) {
+						throw new Error(updateTypeResult?.errMsg || '更新失败');
+					}
+
+					// 更新本地数据
+					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
+					this.switchData.preview_images = [...this.switchImages];
+
+					// 强制更新视图
+					this.$forceUpdate();
+
+					uni.showToast({
+						title: '类型修改成功',
+						icon: 'success'
+					});
+				} catch (e) {
+					console.error('修改图片类型失败:', e);
+					uni.showToast({
+						title: '修改失败',
+						icon: 'none'
+					});
+				}
+			},
+
+			// 获取图片类型索引
+			getTypeIndex(type) {
+				return this.imageTypeOptions.findIndex(option => option.value === type);
+			},
+
+			// 处理类型变化
+			async handleTypeChange(e) {
+				// 如果是默认图片，不允许修改类型
+				if (!this.currentImage.fileID) {
+					uni.showToast({
+						title: '默认图片不能修改类型',
+						icon: 'none'
+					});
+					return;
+				}
+
+				const selectedType = this.imageTypeOptions[e.detail.value].value;
+
+				// 如果选择的类型与当前类型相同，不做处理
+				if (selectedType === this.currentImage.type) {
+					return;
+				}
+
+				// 检查"其他视图"的数量限制
+				if (selectedType === 'other' && this.currentImage.type !== 'other') {
+					const otherViewCount = this.switchImages.filter(img => img.type === 'other').length;
+					if (otherViewCount >= 3) {
+						uni.showToast({
+							title: '其他视图最多只能有3张',
+							icon: 'none'
+						});
+						return;
+					}
+				}
+
+				try {
+					// 获取原始文件扩展名
+					const originalExt = 'jpg'; // 统一使用 jpg 格式
+
+					// 生成新的文件名
+					const newFileName = this.getImageFileName(selectedType, originalExt);
+
+					// 更新图片类型
+					const imageInfo = {
+						...this.currentImage,
+						type: selectedType,
+						fileName: newFileName,
+						updateTime: this.getBeiJingISOString()
+					};
+
+					// 更新数据库
+					const { result: updateTypeResult } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'updateSwitchImage',
+							switchId: this.switchData._id,
+							imageIndex: this.currentImageIndex,
+							imageInfo: imageInfo
+						}
+					});
+
+					// 检查返回结果
+					if (!updateTypeResult || updateTypeResult.errCode !== 0) {
+						throw new Error(updateTypeResult?.errMsg || '更新失败');
+					}
+
+					// 更新本地数据
+					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
+					this.switchData.preview_images = [...this.switchImages];
+
+					// 强制更新视图
+					this.$forceUpdate();
+
+					uni.showToast({
+						title: '类型修改成功',
+						icon: 'success'
+					});
+				} catch (e) {
+					console.error('修改图片类型失败:', e);
+					uni.showToast({
+						title: '修改失败',
+						icon: 'none'
+					});
+				}
+			},
+
+			// 添加通过 ID 加载数据的方法
+			async loadSwitchDataById(id) {
+				try {
+					const { result } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'getSwitchById',
+							id: id
+						}
+					})
+
+					if (result && result.errCode === 0 && result.data) {
+						this.handleSwitchData(result.data)
+					} else {
+						throw new Error(result?.errMsg || '加载失败')
+					}
+				} catch (e) {
+					console.error('加载数据失败:', e)
+					uni.showToast({
+						title: '加载失败',
+						icon: 'none'
+					})
+				}
+			},
+
+			// 处理图片点击预览
+			async handleImageTap(index) {
+				// 如果正在编辑模式，不进行预览
+				if (this.isEditing) {
+					return;
+				}
+
+				try {
+					// 过滤有效的图片URL
+					const urls = this.switchImages
+						.filter(img => img.fileID && img.fileID !== '/static/default_switch.webp')
+						.map(img => img.fileID);
+
+					// 如果没有有效的图片URL
+					if (urls.length === 0) {
+						uni.showToast({
+							title: '无可预览图片',
+							icon: 'none'
+						});
+						return;
+					}
+
+					// 获取当前图片的URL
+					const currentFileID = this.switchImages[index].fileID;
+
+					// 使用微信的预览图片API
+					wx.previewImage({
+						current: currentFileID, // 当前显示图片的URL
+						urls: urls, // 所有图片的URL列表
+						success: () => {
+							console.log('预览图片成功');
+						},
+						fail: (error) => {
+							console.error('预览图片失败:', error);
+							uni.showToast({
+								title: '预览失败',
+								icon: 'none'
+							});
+						}
+					});
+				} catch (error) {
+					console.error('处理图片预览失败:', error);
+					uni.showToast({
+						title: error.message || '预览失败',
+						icon: 'none'
+					});
+				}
+			},
+
+			// 处理设置主图
+			async handleSetMainImage() {
+				try {
+					// 获取当前图片的索引
+					const currentIndex = this.currentImageIndex;
+
+					// 获取所有图片
+					const allImages = this.switchImages;
+
+					// 如果当前图片是主图，不需要设置
+					if (currentIndex === 0) {
+						uni.showToast({
+							title: '已经是主图',
+							icon: 'none'
+						});
+						return;
+					}
+
+					// 确认设置
+					const confirmRes = await uni.showModal({
+						title: '设为主图',
+						content: '确定要将当前图片设为主图吗？',
+						confirmText: '确定',
+						confirmColor: '#4CAF50'
+					});
+
+					if (!confirmRes.confirm) {
+						return;
+					}
+
+					// 将当前图片设置为主图
+					const currentImage = allImages[currentIndex];
+					// 创建新的图片数组
+					const newImages = [...allImages];
+					// 移除当前图片
+					newImages.splice(currentIndex, 1);
+					// 将当前图片插入到数组开头
+					newImages.unshift({
+						...currentImage,
+						type: 'detail',
+						fileName: 'main_image.jpg',
+						updateTime: this.getBeiJingISOString()
+					});
+
+					// 更新数据库
+					const { result: updateResult } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'updateSwitchImages',
+							switchId: this.switchData._id,
+							images: newImages
+						}
+					});
+
+					if (!updateResult || updateResult.errCode !== 0) {
+						throw new Error(updateResult?.errMsg || '设置失败');
+					}
+
+					// 更新本地数据
+					this.switchImages = newImages;
+					this.switchData.preview_images = [...this.switchImages];
+					// 更新当前索引为0（主图位置）
+					this.currentImageIndex = 0;
+
+					// 强制更新视图
+					this.$forceUpdate();
+
+					uni.showToast({
+						title: '设置成功',
+						icon: 'success'
+					});
+				} catch (e) {
+					console.error('设置主图失败:', e);
+					uni.showToast({
+						title: '设置失败',
+						icon: 'none'
+					});
+				}
+			}
 		}
 	}
 </script>
