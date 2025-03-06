@@ -22,14 +22,12 @@ const _sfc_main = {
       isLoading: false,
       // 是否正在加载数据
       imageTypeOptions: [
+        { text: "官方图", value: "official" },
         { text: "详情图", value: "detail" },
         { text: "上盖图", value: "top" },
         { text: "轴心图", value: "stem" },
         { text: "弹簧图", value: "spring" },
-        { text: "底壳图", value: "bottom" },
-        { text: "侧图", value: "side" },
-        { text: "外壳图", value: "housing" },
-        { text: "其他视图", value: "other" }
+        { text: "更多类型...", value: "more" }
       ],
       MAX_WIDTH: 1280,
       MAX_HEIGHT: 1280,
@@ -42,13 +40,13 @@ const _sfc_main = {
     }
   },
   onLoad(options) {
-    common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:166", "详情页面加载, 参数:", options);
+    common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:164", "详情页面加载, 参数:", options);
     common_vendor.index.$on("switchData", this.handleSwitchData);
     if (options.id) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:172", "准备使用 ID 加载数据:", options.id);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:170", "准备使用 ID 加载数据:", options.id);
       setTimeout(() => {
         if (!this.switchData._id) {
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:176", "未收到数据，从服务器加载");
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:174", "未收到数据，从服务器加载");
           this.loadSwitchDataById(options.id);
         }
       }, 200);
@@ -60,24 +58,24 @@ const _sfc_main = {
   methods: {
     // 处理图片加载成功
     handleImageLoad(index) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:191", "图片加载成功:", index, {
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:189", "图片加载成功:", index, {
         fileID: this.switchImages[index].fileID,
         type: this.switchImages[index].type
       });
     },
     // 处理传递来的轴体数据
     handleSwitchData(data) {
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:199", "接收到轴体数据:", data);
-      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:201", "原始 preview_images:", data.preview_images);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:197", "接收到轴体数据:", data);
+      common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:199", "原始 preview_images:", data.preview_images);
       if (this.switchData._id === data._id) {
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:205", "已有相同数据，跳过更新");
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:203", "已有相同数据，跳过更新");
         return;
       }
       this.switchData = data;
       if (Array.isArray(data.preview_images)) {
         this.switchImages = data.preview_images.map((img) => {
           if (!img || !img.fileID) {
-            common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:215", "发现无效图片数据，使用默认图片:", img);
+            common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:213", "发现无效图片数据，使用默认图片:", img);
             return {
               fileID: "/static/default_switch.webp",
               type: "detail",
@@ -88,9 +86,9 @@ const _sfc_main = {
           }
           return img;
         });
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:226", "处理后的图片数组:", this.switchImages);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:224", "处理后的图片数组:", this.switchImages);
       } else {
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:228", "preview_images 不是数组:", data.preview_images);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:226", "preview_images 不是数组:", data.preview_images);
         this.switchImages = [{
           fileID: "/static/default_switch.webp",
           type: "detail",
@@ -146,7 +144,7 @@ const _sfc_main = {
         const beijingDate = new Date(date.getTime() + 8 * 60 * 60 * 1e3);
         return beijingDate.toISOString().slice(0, 19).replace("Z", "");
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:302", "时间格式化失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:300", "时间格式化失败:", e);
         return time;
       }
     },
@@ -164,40 +162,40 @@ const _sfc_main = {
     // 压缩图片
     async compressImage(tempFilePath) {
       try {
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:323", "开始压缩图片:", tempFilePath);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:321", "开始压缩图片:", tempFilePath);
         const ext = tempFilePath.split(".").pop().toLowerCase();
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:327", "图片格式:", ext);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:325", "图片格式:", ext);
         const fs = common_vendor.wx$1.getFileSystemManager();
         if (!tempFilePath || typeof tempFilePath !== "string") {
           throw new Error("无效的文件路径");
         }
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:338", "准备获取图片信息...");
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:336", "准备获取图片信息...");
         const imageInfo = await new Promise((resolve, reject) => {
           common_vendor.wx$1.getImageInfo({
             src: tempFilePath,
             success: (res) => {
-              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:343", "获取图片信息成功:", res);
+              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:341", "获取图片信息成功:", res);
               resolve(res);
             },
             fail: (error) => {
-              common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:347", "获取图片信息失败:", error);
+              common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:345", "获取图片信息失败:", error);
               reject(new Error("获取图片信息失败"));
             }
           });
         });
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:352", "原始图片信息:", imageInfo);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:350", "原始图片信息:", imageInfo);
         const originalFileInfo = await new Promise((resolve, reject) => {
           fs.getFileInfo({
             filePath: tempFilePath,
             success: (res) => {
-              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:359", "获取文件大小成功:", res);
+              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:357", "获取文件大小成功:", res);
               resolve(res);
             },
             fail: reject
           });
         });
         const originalSize = (originalFileInfo.size / 1024).toFixed(2);
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:366", `原始图片大小: ${originalSize}KB, 尺寸: ${imageInfo.width}x${imageInfo.height}`);
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:364", `原始图片大小: ${originalSize}KB, 尺寸: ${imageInfo.width}x${imageInfo.height}`);
         let targetWidth = imageInfo.width;
         let targetHeight = imageInfo.height;
         const maxSize = 1024;
@@ -207,23 +205,23 @@ const _sfc_main = {
         if (targetWidth > maxSize || targetHeight > maxSize) {
           const maxDimension = Math.max(targetWidth, targetHeight);
           scale = maxSize / maxDimension;
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:383", "图片需要缩小，缩放比例:", scale);
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:381", "图片需要缩小，缩放比例:", scale);
         }
         if (targetWidth < minSize && targetHeight < minSize) {
           const minDimension = Math.min(targetWidth, targetHeight);
           scale = minSize / minDimension;
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:391", "图片需要放大，缩放比例:", scale);
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:389", "图片需要放大，缩放比例:", scale);
         }
         if (scale !== 1) {
           targetWidth = Math.round(targetWidth * scale);
           targetHeight = Math.round(targetHeight * scale);
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:398", "应用缩放后的尺寸:", {
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:396", "应用缩放后的尺寸:", {
             width: targetWidth,
             height: targetHeight,
             scale
           });
         }
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:405", "计算后的尺寸:", { width: targetWidth, height: targetHeight });
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:403", "计算后的尺寸:", { width: targetWidth, height: targetHeight });
         const compressedPath = await new Promise((resolve, reject) => {
           common_vendor.wx$1.compressImage({
             src: tempFilePath,
@@ -231,7 +229,7 @@ const _sfc_main = {
             compressedWidth: targetWidth,
             compressHeight: targetHeight,
             success: (res) => {
-              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:415", "压缩图片成功:", res);
+              common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:413", "压缩图片成功:", res);
               resolve(res);
             },
             fail: reject
@@ -252,353 +250,35 @@ const _sfc_main = {
           });
         });
         const compressedSize = (finalFileInfo.size / 1024).toFixed(2);
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:441", `压缩完成:
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:439", `压缩完成:
 						原始大小: ${originalSize}KB (${imageInfo.width}x${imageInfo.height})
 						压缩后大小: ${compressedSize}KB (${compressedInfo.width}x${compressedInfo.height})
 						压缩率: ${((1 - finalFileInfo.size / originalFileInfo.size) * 100).toFixed(2)}%
 					`);
         return compressedPath.tempFilePath;
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:449", "压缩图片失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:447", "压缩图片失败:", e);
         return tempFilePath;
       }
     },
     // 生成图片文件名
-    getImageFileName(type = "detail", originalExt = "jpg") {
-      let switchName = this.switchData.switch_name_en || this.switchData.switch_name || "unknown";
-      const safeSwitchName = switchName.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "").replace(/_+/g, "_").replace(/^_|_$/g, "");
+    getImageFileName(type, originalExt = "jpg") {
       const now = /* @__PURE__ */ new Date();
       const timeString = now.getFullYear() + String(now.getMonth() + 1).padStart(2, "0") + String(now.getDate()).padStart(2, "0") + "_" + String(now.getHours()).padStart(2, "0") + String(now.getMinutes()).padStart(2, "0") + String(now.getSeconds()).padStart(2, "0");
       const random = Math.random().toString(36).substring(2, 8);
-      let typePrefix = "";
-      if (type === "other") {
-        const otherViewCount = this.switchImages.filter((img) => img.type === "other").length;
-        typePrefix = `other${otherViewCount + 1}`;
-      } else {
-        const prefixMap = {
-          detail: "detail",
-          top: "top",
-          stem: "stem",
-          spring: "spring",
-          bottom: "bottom",
-          side: "side",
-          housing: "housing"
-        };
-        typePrefix = prefixMap[type] || "other1";
-      }
-      return `${safeSwitchName}_${typePrefix}_${timeString}_${random}.${originalExt}`;
-    },
-    // 从文件名解析图片类型
-    getTypeFromFileName(fileName) {
-      if (!fileName)
-        return "detail";
-      const typeMatches = {
-        "detail": "detail",
-        "top": "top",
-        "stem": "stem",
-        "spring": "spring",
-        "bottom": "bottom",
-        "side": "side",
-        "housing": "housing",
-        "other1": "other",
-        "other2": "other",
-        "other3": "other"
-      };
-      for (const [typeId, type] of Object.entries(typeMatches)) {
-        if (fileName.includes(`_${typeId}_`)) {
-          return type;
-        }
-      }
-      const legacyMatches = {
-        "_dt_": "detail",
-        "_tp_": "top",
-        "_st_": "stem",
-        "_sp_": "spring",
-        "_bt_": "bottom",
-        "_sd_": "side",
-        "_hs_": "housing",
-        "_ot1_": "other",
-        "_ot2_": "other",
-        "_ot3_": "other"
-      };
-      for (const [typeId, type] of Object.entries(legacyMatches)) {
-        if (fileName.includes(typeId)) {
-          return type;
-        }
-      }
-      return "detail";
-    },
-    // 处理添加图片
-    async handleAddImage() {
-      try {
-        const res = await common_vendor.index.chooseImage({
-          count: 1,
-          sizeType: ["compressed"],
-          sourceType: ["album", "camera"]
-        });
-        const tempFilePath = res.tempFilePaths[0];
-        const compressedPath = await this.compressImage(tempFilePath);
-        const originalExt = "jpg";
-        const fileName = this.getImageFileName("detail", originalExt);
-        const cloudPath = fileName;
-        const uploadRes = await common_vendor.er.uploadFile({
-          filePath: compressedPath,
-          cloudPath
-        });
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:580", "文件上传成功:", uploadRes);
-        const imageInfo = {
-          fileID: uploadRes.fileID,
-          type: "detail",
-          fileName,
-          uploadTime: this.getBeiJingISOString(),
-          updateTime: this.getBeiJingISOString()
-        };
-        const { result: updateResult } = await common_vendor.er.callFunction({
-          name: "switchApi",
-          data: {
-            action: "updateSwitchImage",
-            switchId: this.switchData._id,
-            imageIndex: this.switchImages.length,
-            imageInfo
-          }
-        });
-        if (!updateResult || updateResult.errCode !== 0) {
-          throw new Error((updateResult == null ? void 0 : updateResult.errMsg) || "更新失败");
-        }
-        this.switchImages.push(imageInfo);
-        this.switchData.preview_images = [...this.switchImages];
-        this.currentImageIndex = this.switchImages.length - 1;
-        this.$forceUpdate();
-        common_vendor.index.showToast({
-          title: "添加成功",
-          icon: "success"
-        });
-      } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:621", "添加图片失败:", e);
-        common_vendor.index.showToast({
-          title: e.message || "添加失败",
-          icon: "none"
-        });
-      }
-    },
-    // 删除云存储中的文件
-    async deleteCloudFile(fileID) {
-      if (!fileID || fileID.includes("default_switch.webp")) {
-        return;
-      }
-      try {
-        const result = await common_vendor.er.callFunction({
-          name: "switchApi",
-          data: {
-            action: "deleteCloudFile",
-            fileList: [fileID]
-          }
-        });
-        if (result.result.errCode === 0) {
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:645", "文件删除成功:", fileID, result);
-          return true;
-        } else {
-          throw new Error(result.result.errMsg);
-        }
-      } catch (error) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:651", "文件删除失败:", error);
-        return false;
-      }
-    },
-    // 处理编辑图片
-    async handleEditConfirm() {
-      try {
-        const res = await new Promise((resolve, reject) => {
-          common_vendor.wx$1.chooseImage({
-            count: 1,
-            sizeType: ["original", "compressed"],
-            sourceType: ["album", "camera"],
-            success: resolve,
-            fail: (error) => {
-              if (error.errMsg.includes("cancel")) {
-                reject(new Error("cancel"));
-              } else {
-                reject(error);
-              }
-            }
-          });
-        });
-        const tempFilePath = res.tempFilePaths[0];
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:678", "选择的图片:", tempFilePath);
-        const compressedPath = await this.compressImage(tempFilePath);
-        const originalExt = "jpg";
-        const fileName = this.getImageFileName("detail", originalExt);
-        const cloudPath = fileName;
-        common_vendor.index.showLoading({ title: "上传中..." });
-        const oldFileID = this.switchImages[this.currentImageIndex].fileID;
-        const uploadResult = await common_vendor.er.uploadFile({
-          filePath: compressedPath,
-          cloudPath
-        });
-        await this.deleteCloudFile(oldFileID);
-        const imageInfo = {
-          fileID: uploadResult.fileID,
-          type: this.switchImages[this.currentImageIndex].type,
-          fileName,
-          uploadTime: this.getBeiJingISOString(),
-          updateTime: this.getBeiJingISOString()
-        };
-        const { result: updateResult } = await common_vendor.er.callFunction({
-          name: "switchApi",
-          data: {
-            action: "updateSwitchImage",
-            switchId: this.switchData._id,
-            imageIndex: this.currentImageIndex,
-            imageInfo
-          }
-        });
-        if (!updateResult || updateResult.errCode !== 0) {
-          throw new Error((updateResult == null ? void 0 : updateResult.errMsg) || "更新失败");
-        }
-        this.$set(this.switchImages, this.currentImageIndex, imageInfo);
-        this.switchData.preview_images = this.switchImages;
-        this.$forceUpdate();
-        common_vendor.index.showToast({ title: "更换成功" });
-      } catch (e) {
-        if (e.message === "cancel") {
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:740", "用户取消选择图片");
-          return;
-        }
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:744", "编辑图片失败:", e);
-        common_vendor.index.showToast({
-          title: "编辑图片失败",
-          icon: "none"
-        });
-      } finally {
-        common_vendor.index.hideLoading();
-      }
-    },
-    // 处理删除图片
-    async handleDeleteImage() {
-      try {
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:757", "开始删除图片操作");
-        const currentImage = this.switchImages[this.currentImageIndex];
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:760", "当前图片信息:", currentImage);
-        if (!currentImage.fileID) {
-          common_vendor.index.showToast({
-            title: "默认图片不能删除",
-            icon: "none"
-          });
-          return;
-        }
-        const confirmRes = await common_vendor.index.showModal({
-          title: "确认删除",
-          content: "确定要删除这张图片吗？",
-          confirmText: "删除",
-          confirmColor: "#f44336"
-        });
-        if (!confirmRes.confirm) {
-          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:780", "用户取消删除");
-          return;
-        }
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:784", "准备调用云函数删除图片:", {
-          switchId: this.switchData._id,
-          imageIndex: this.currentImageIndex,
-          fileID: currentImage.fileID
-        });
-        const { result } = await common_vendor.er.callFunction({
-          name: "switchApi",
-          data: {
-            action: "deleteSwitchImage",
-            switchId: this.switchData._id,
-            imageIndex: this.currentImageIndex,
-            fileID: currentImage.fileID
-          }
-        });
-        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:801", "云函数返回结果:", result);
-        if (!result || result.errCode !== 0) {
-          throw new Error((result == null ? void 0 : result.errMsg) || "删除失败");
-        }
-        const newImages = [...this.switchImages];
-        newImages.splice(this.currentImageIndex, 1);
-        this.switchImages = newImages;
-        this.switchData.preview_images = newImages;
-        if (this.switchImages.length > 0) {
-          this.currentImageIndex = Math.min(this.currentImageIndex, this.switchImages.length - 1);
-        } else {
-          this.currentImageIndex = 0;
-        }
-        this.isEditing = false;
-        common_vendor.index.showToast({
-          title: "删除成功",
-          icon: "success"
-        });
-      } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:831", "删除图片失败:", e);
-        common_vendor.index.showToast({
-          title: e.message || "删除失败",
-          icon: "none"
-        });
-      }
-    },
-    // 处理图片加载错误
-    handleImageError(index) {
-      common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:841", "图片加载失败:", index, {
-        fileID: this.switchImages[index].fileID,
-        type: this.switchImages[index].type
-      });
-      if (this.switchImages[index]) {
-        this.$set(this.switchImages[index], "fileID", "/static/default_switch.webp");
-      }
-    },
-    // 开始编辑图片
-    startEditing() {
-      if (!this.switchImages.length) {
-        common_vendor.index.showToast({
-          title: "暂无图片",
-          icon: "none"
-        });
-        return;
-      }
-      this.isEditing = true;
-    },
-    // 处理触发区域点击
-    handleTriggerTap() {
-      this.triggerCount++;
-      if (this.triggerCount >= 5) {
-        this.triggerCount = 0;
-        this.isEditing = true;
-      }
-    },
-    // 切换到上一张图片
-    handlePrevImage() {
-      if (this.switchImages.length <= 1)
-        return;
-      this.currentImageIndex = (this.currentImageIndex - 1 + this.switchImages.length) % this.switchImages.length;
-    },
-    // 切换到下一张图片
-    handleNextImage() {
-      if (this.switchImages.length <= 1)
-        return;
-      this.currentImageIndex = (this.currentImageIndex + 1) % this.switchImages.length;
-    },
-    // 点击指示器切换图片
-    handleIndicatorTap(index) {
-      this.currentImageIndex = index;
+      const typePrefix = type === "other" ? `other${this.switchImages.filter((img) => img.type === "other").length + 1}` : type;
+      return `${typePrefix}_${timeString}_${random}.${originalExt}`;
     },
     // 获取图片类型文本
     getImageTypeText(type) {
-      const typeMap = {
-        detail: "详情图",
-        top: "上盖图",
-        stem: "轴心图",
-        spring: "弹簧图",
-        bottom: "底壳图",
-        side: "侧图",
-        housing: "外壳图",
-        other: "其他视图"
-      };
-      return typeMap[type] || type;
+      const option = this.imageTypeOptions.find((opt) => opt.value === type);
+      return option ? option.text : "未知类型";
     },
     // 修改图片类型
     async handleChangeImageType() {
       try {
         const imageTypes = [
+          { text: "官方图", value: "official" },
           { text: "详情图", value: "detail" },
           { text: "上盖图", value: "top" },
           { text: "轴心图", value: "stem" },
@@ -628,8 +308,7 @@ const _sfc_main = {
             { text: "底壳图", value: "bottom" },
             { text: "侧图", value: "side" },
             { text: "外壳图", value: "housing" },
-            { text: "其他视图", value: "other" },
-            { text: "返回上级", value: "back" }
+            { text: "其他视图", value: "other" }
           ];
           const moreResult = await new Promise((resolve, reject) => {
             common_vendor.index.showActionSheet({
@@ -682,14 +361,14 @@ const _sfc_main = {
           throw new Error((updateTypeResult == null ? void 0 : updateTypeResult.errMsg) || "更新失败");
         }
         this.$set(this.switchImages, this.currentImageIndex, imageInfo);
-        this.switchData.preview_images = [...this.switchImages];
+        this.switchData.preview_images = this.switchImages;
         this.$forceUpdate();
         common_vendor.index.showToast({
           title: "类型修改成功",
           icon: "success"
         });
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1025", "修改图片类型失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:602", "修改图片类型失败:", e);
         common_vendor.index.showToast({
           title: "修改失败",
           icon: "none"
@@ -702,62 +381,32 @@ const _sfc_main = {
     },
     // 处理类型变化
     async handleTypeChange(e) {
-      if (!this.currentImage.fileID) {
-        common_vendor.index.showToast({
-          title: "默认图片不能修改类型",
-          icon: "none"
-        });
-        return;
-      }
-      const selectedType = this.imageTypeOptions[e.detail.value].value;
-      if (selectedType === this.currentImage.type) {
-        return;
-      }
-      if (selectedType === "other" && this.currentImage.type !== "other") {
-        const otherViewCount = this.switchImages.filter((img) => img.type === "other").length;
-        if (otherViewCount >= 3) {
-          common_vendor.index.showToast({
-            title: "其他视图最多只能有3张",
-            icon: "none"
-          });
-          return;
+      const index = e.detail.value;
+      const newType = this.imageTypeOptions[index].value;
+      const imageInfo = {
+        ...this.currentImage,
+        type: newType,
+        updateTime: this.getBeiJingISOString()
+      };
+      const { result: updateTypeResult } = await common_vendor.er.callFunction({
+        name: "switchApi",
+        data: {
+          action: "updateSwitchImage",
+          switchId: this.switchData._id,
+          imageIndex: this.currentImageIndex,
+          imageInfo
         }
+      });
+      if (!updateTypeResult || updateTypeResult.errCode !== 0) {
+        throw new Error((updateTypeResult == null ? void 0 : updateTypeResult.errMsg) || "更新失败");
       }
-      try {
-        const originalExt = "jpg";
-        const newFileName = this.getImageFileName(selectedType, originalExt);
-        const imageInfo = {
-          ...this.currentImage,
-          type: selectedType,
-          fileName: newFileName,
-          updateTime: this.getBeiJingISOString()
-        };
-        const { result: updateTypeResult } = await common_vendor.er.callFunction({
-          name: "switchApi",
-          data: {
-            action: "updateSwitchImage",
-            switchId: this.switchData._id,
-            imageIndex: this.currentImageIndex,
-            imageInfo
-          }
-        });
-        if (!updateTypeResult || updateTypeResult.errCode !== 0) {
-          throw new Error((updateTypeResult == null ? void 0 : updateTypeResult.errMsg) || "更新失败");
-        }
-        this.$set(this.switchImages, this.currentImageIndex, imageInfo);
-        this.switchData.preview_images = [...this.switchImages];
-        this.$forceUpdate();
-        common_vendor.index.showToast({
-          title: "类型修改成功",
-          icon: "success"
-        });
-      } catch (e2) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1111", "修改图片类型失败:", e2);
-        common_vendor.index.showToast({
-          title: "修改失败",
-          icon: "none"
-        });
-      }
+      this.$set(this.switchImages, this.currentImageIndex, imageInfo);
+      this.switchData.preview_images = [...this.switchImages];
+      this.$forceUpdate();
+      common_vendor.index.showToast({
+        title: "类型修改成功",
+        icon: "success"
+      });
     },
     // 添加通过 ID 加载数据的方法
     async loadSwitchDataById(id) {
@@ -775,7 +424,7 @@ const _sfc_main = {
           throw new Error((result == null ? void 0 : result.errMsg) || "加载失败");
         }
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1136", "加载数据失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:673", "加载数据失败:", e);
         common_vendor.index.showToast({
           title: "加载失败",
           icon: "none"
@@ -803,10 +452,10 @@ const _sfc_main = {
           urls,
           // 所有图片的URL列表
           success: () => {
-            common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:1174", "预览图片成功");
+            common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:711", "预览图片成功");
           },
           fail: (error) => {
-            common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1177", "预览图片失败:", error);
+            common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:714", "预览图片失败:", error);
             common_vendor.index.showToast({
               title: "预览失败",
               icon: "none"
@@ -814,7 +463,7 @@ const _sfc_main = {
           }
         });
       } catch (error) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1185", "处理图片预览失败:", error);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:722", "处理图片预览失败:", error);
         common_vendor.index.showToast({
           title: error.message || "预览失败",
           icon: "none"
@@ -871,12 +520,262 @@ const _sfc_main = {
           icon: "success"
         });
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1265", "设置主图失败:", e);
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:802", "设置主图失败:", e);
         common_vendor.index.showToast({
           title: "设置失败",
           icon: "none"
         });
       }
+    },
+    // 处理添加图片
+    async handleAddImage() {
+      try {
+        const chooseResult = await common_vendor.index.chooseImage({
+          count: 1,
+          sizeType: ["compressed"],
+          sourceType: ["album", "camera"]
+        });
+        const compressedImage = await this.compressImage(chooseResult.tempFilePaths[0]);
+        const fileName = `${Date.now()}_${this.switchData.switch_name}_image.jpg`;
+        const uploadResult = await common_vendor.er.uploadFile({
+          filePath: compressedImage,
+          cloudPath: `switches/${this.switchData._id}/${fileName}`
+        });
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:832", "文件上传成功:", uploadResult);
+        const imageInfo = {
+          fileID: uploadResult.fileID,
+          type: "detail",
+          fileName,
+          uploadTime: this.getBeiJingISOString(),
+          updateTime: this.getBeiJingISOString()
+        };
+        const { result: updateResult } = await common_vendor.er.callFunction({
+          name: "switchApi",
+          data: {
+            action: "updateSwitchImage",
+            switchId: this.switchData._id,
+            imageIndex: this.switchImages.length,
+            imageInfo
+          }
+        });
+        if (!updateResult || updateResult.errCode !== 0) {
+          throw new Error((updateResult == null ? void 0 : updateResult.errMsg) || "更新失败");
+        }
+        this.switchImages.push(imageInfo);
+        this.switchData.preview_images = [...this.switchImages];
+        this.currentImageIndex = this.switchImages.length - 1;
+        this.$forceUpdate();
+        common_vendor.index.showToast({
+          title: "添加成功",
+          icon: "success"
+        });
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:873", "添加图片失败:", e);
+        common_vendor.index.showToast({
+          title: e.message || "添加失败",
+          icon: "none"
+        });
+      }
+    },
+    // 删除云存储中的文件
+    async deleteCloudFile(fileID) {
+      if (!fileID || fileID.includes("default_switch.webp")) {
+        return;
+      }
+      try {
+        const result = await common_vendor.er.callFunction({
+          name: "switchApi",
+          data: {
+            action: "deleteCloudFile",
+            fileList: [fileID]
+          }
+        });
+        if (result.result.errCode === 0) {
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:897", "文件删除成功:", fileID, result);
+          return true;
+        } else {
+          throw new Error(result.result.errMsg);
+        }
+      } catch (error) {
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:903", "文件删除失败:", error);
+        return false;
+      }
+    },
+    // 处理编辑图片
+    async handleEditConfirm() {
+      try {
+        const res = await new Promise((resolve, reject) => {
+          common_vendor.wx$1.chooseImage({
+            count: 1,
+            sizeType: ["original", "compressed"],
+            sourceType: ["album", "camera"],
+            success: resolve,
+            fail: (error) => {
+              if (error.errMsg.includes("cancel")) {
+                reject(new Error("cancel"));
+              } else {
+                reject(error);
+              }
+            }
+          });
+        });
+        const tempFilePath = res.tempFilePaths[0];
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:930", "选择的图片:", tempFilePath);
+        const compressedPath = await this.compressImage(tempFilePath);
+        const originalExt = "jpg";
+        const fileName = this.getImageFileName("detail", originalExt);
+        const cloudPath = fileName;
+        common_vendor.index.showLoading({ title: "上传中..." });
+        const oldFileID = this.switchImages[this.currentImageIndex].fileID;
+        const uploadResult = await common_vendor.er.uploadFile({
+          filePath: compressedPath,
+          cloudPath
+        });
+        await this.deleteCloudFile(oldFileID);
+        const imageInfo = {
+          fileID: uploadResult.fileID,
+          type: this.switchImages[this.currentImageIndex].type,
+          fileName,
+          uploadTime: this.getBeiJingISOString(),
+          updateTime: this.getBeiJingISOString()
+        };
+        const { result: updateResult } = await common_vendor.er.callFunction({
+          name: "switchApi",
+          data: {
+            action: "updateSwitchImage",
+            switchId: this.switchData._id,
+            imageIndex: this.currentImageIndex,
+            imageInfo
+          }
+        });
+        if (!updateResult || updateResult.errCode !== 0) {
+          throw new Error((updateResult == null ? void 0 : updateResult.errMsg) || "更新失败");
+        }
+        this.$set(this.switchImages, this.currentImageIndex, imageInfo);
+        this.switchData.preview_images = this.switchImages;
+        this.$forceUpdate();
+        common_vendor.index.showToast({ title: "更换成功" });
+      } catch (e) {
+        if (e.message === "cancel") {
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:992", "用户取消选择图片");
+          return;
+        }
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:996", "编辑图片失败:", e);
+        common_vendor.index.showToast({
+          title: "编辑图片失败",
+          icon: "none"
+        });
+      } finally {
+        common_vendor.index.hideLoading();
+      }
+    },
+    // 处理删除图片
+    async handleDeleteImage() {
+      try {
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:1009", "开始删除图片操作");
+        const currentImage = this.switchImages[this.currentImageIndex];
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:1012", "当前图片信息:", currentImage);
+        if (!currentImage.fileID) {
+          common_vendor.index.showToast({
+            title: "默认图片不能删除",
+            icon: "none"
+          });
+          return;
+        }
+        const confirmRes = await common_vendor.index.showModal({
+          title: "确认删除",
+          content: "确定要删除这张图片吗？",
+          confirmText: "删除",
+          confirmColor: "#f44336"
+        });
+        if (!confirmRes.confirm) {
+          common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:1032", "用户取消删除");
+          return;
+        }
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:1036", "准备调用云函数删除图片:", {
+          switchId: this.switchData._id,
+          imageIndex: this.currentImageIndex,
+          fileID: currentImage.fileID
+        });
+        const { result } = await common_vendor.er.callFunction({
+          name: "switchApi",
+          data: {
+            action: "deleteSwitchImage",
+            switchId: this.switchData._id,
+            imageIndex: this.currentImageIndex,
+            fileID: currentImage.fileID
+          }
+        });
+        common_vendor.index.__f__("log", "at pages/switchInfo/switchInfo.vue:1053", "云函数返回结果:", result);
+        if (!result || result.errCode !== 0) {
+          throw new Error((result == null ? void 0 : result.errMsg) || "删除失败");
+        }
+        const newImages = [...this.switchImages];
+        newImages.splice(this.currentImageIndex, 1);
+        this.switchImages = newImages;
+        this.switchData.preview_images = newImages;
+        if (this.switchImages.length > 0) {
+          this.currentImageIndex = Math.min(this.currentImageIndex, this.switchImages.length - 1);
+        } else {
+          this.currentImageIndex = 0;
+        }
+        this.isEditing = false;
+        common_vendor.index.showToast({
+          title: "删除成功",
+          icon: "success"
+        });
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1083", "删除图片失败:", e);
+        common_vendor.index.showToast({
+          title: e.message || "删除失败",
+          icon: "none"
+        });
+      }
+    },
+    // 处理图片加载错误
+    handleImageError(index) {
+      common_vendor.index.__f__("error", "at pages/switchInfo/switchInfo.vue:1093", "图片加载失败:", index, {
+        fileID: this.switchImages[index].fileID,
+        type: this.switchImages[index].type
+      });
+      if (this.switchImages[index]) {
+        this.$set(this.switchImages[index], "fileID", "/static/default_switch.webp");
+      }
+    },
+    // 开始编辑图片
+    startEditing() {
+      if (!this.switchImages.length) {
+        common_vendor.index.showToast({
+          title: "暂无图片",
+          icon: "none"
+        });
+        return;
+      }
+      this.isEditing = true;
+    },
+    // 处理触发区域点击
+    handleTriggerTap() {
+      this.triggerCount++;
+      if (this.triggerCount >= 5) {
+        this.triggerCount = 0;
+        this.isEditing = true;
+      }
+    },
+    // 切换到上一张图片
+    handlePrevImage() {
+      if (this.switchImages.length <= 1)
+        return;
+      this.currentImageIndex = (this.currentImageIndex - 1 + this.switchImages.length) % this.switchImages.length;
+    },
+    // 切换到下一张图片
+    handleNextImage() {
+      if (this.switchImages.length <= 1)
+        return;
+      this.currentImageIndex = (this.currentImageIndex + 1) % this.switchImages.length;
+    },
+    // 点击指示器切换图片
+    handleIndicatorTap(index) {
+      this.currentImageIndex = index;
     }
   }
 };

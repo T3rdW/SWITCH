@@ -23,7 +23,7 @@
 	padding: 12px 15px;
 	display: flex;
 	position: relative;
-	border-top: 0.5px solid #eee;
+	border-top: 1px solid #EBEEF5;
 
 	.title {
 		flex: none;
