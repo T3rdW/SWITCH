@@ -9,5 +9,13 @@
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
   },
+  "permission": {},
+  "uniCloud": {
+    "provider": "aliyun",
+    "spaceId": "mp-b69f529d-3e22-428e-a2c5-ff093890f5d3",
+    "clientSecret": "yYXDlmeqvILMGL/5+SKfLA==",
+    "functionName": "switchApi",
+    "timeout": 5000
+  },
   "usingComponents": {}
 }

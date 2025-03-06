@@ -203,6 +203,12 @@
 				// 设置导航状态为true
 				this.isNavigating = true;
 
+				// 显示加载提示
+				uni.showLoading({
+					title: '加载中...',
+					mask: true // 使用遮罩防止重复点击
+				});
+
 				try {
 					console.log('点击轴体项:', item)
 					console.log('准备跳转到详情页, ID:', item._id)
@@ -217,10 +223,14 @@
 								// 传递数据
 								uni.$emit('switchData', item)
 								console.log('数据已传递到详情页')
+								// 隐藏加载提示
+								uni.hideLoading();
 							}, 100)
 						},
 						fail: (err) => {
 							console.error('跳转失败:', err)
+							// 隐藏加载提示
+							uni.hideLoading();
 							uni.showToast({
 								title: '跳转失败',
 								icon: 'none'
@@ -229,6 +239,8 @@
 					})
 				} catch (e) {
 					console.error('跳转失败:', e)
+					// 隐藏加载提示
+					uni.hideLoading();
 					uni.showToast({
 						title: '跳转失败',
 						icon: 'none'
@@ -237,7 +249,9 @@
 					// 导航完成后重置状态
 					setTimeout(() => {
 						this.isNavigating = false;
-					}, 500); // 添加500ms延迟，防止快速重复点击
+						// 确保加载提示被关闭
+						uni.hideLoading();
+					}, 500);
 				}
 			},
 
