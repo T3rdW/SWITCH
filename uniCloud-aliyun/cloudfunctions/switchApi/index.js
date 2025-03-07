@@ -498,10 +498,21 @@ async function updateSwitchImages(event) {
 	}
 
 	try {
+		// 获取北京时间的 ISO 字符串
+		function getBeiJingISOString() {
+			const now = new Date();
+			// 获取时区偏移（北京时区 +08:00）
+			const offset = 8 * 60;
+			// 计算北京时间的时间戳
+			const beijingTime = new Date(now.getTime() + (offset + now.getTimezoneOffset()) * 60000);
+			// 返回 ISO 8601 格式的时间字符串（包含时区信息）
+			return beijingTime.toISOString().replace('Z', '+08:00');
+		}
+
 		// 更新数据库
 		const res = await collection.doc(switchId).update({
 			preview_images: images,
-			update_time: new Date().toISOString()
+			update_time: getBeiJingISOString()
 		});
 
 		return {

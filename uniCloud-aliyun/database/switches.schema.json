@@ -35,7 +35,7 @@
                     "type": {
                         "bsonType": "string",
                         "description": "图片类型",
-                        "enum": ["main", "detail"]
+                        "enum": ["main", "detail", "official", "top", "stem", "spring", "bottom", "side", "housing", "other"]
                     },
                     "fileName": {
                         "bsonType": "string",

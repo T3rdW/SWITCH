@@ -141,6 +141,7 @@
 				isEditing: false, // 是否正在编辑图片
 				isLoading: false, // 是否正在加载数据
 				imageTypeOptions: [
+					{ text: '官方图', value: 'official' },
 					{ text: '详情图', value: 'detail' },
 					{ text: '上盖图', value: 'top' },
 					{ text: '轴心图', value: 'stem' },
@@ -188,10 +189,10 @@
 		methods: {
 			// 处理图片加载成功
 			handleImageLoad(index) {
-				console.log('图片加载成功:', index, {
-					fileID: this.switchImages[index].fileID,
-					type: this.switchImages[index].type
-				});
+				// console.log('图片加载成功:', index, {
+				// 	fileID: this.switchImages[index].fileID,
+				// 	type: this.switchImages[index].type
+				// });
 			},
 
 			// 处理传递来的轴体数据
@@ -277,30 +278,37 @@
 				return `${distance}mm`
 			},
 
-			// 获取北京时间的 ISO 格式字符串
+			// 获取北京时间的 ISO 字符串
 			getBeiJingISOString() {
 				const now = new Date();
-				// 转换为北京时间
-				const beijingDate = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-				return beijingDate.toISOString().slice(0, 19).replace('Z', '');
+				// 获取时区偏移（北京时区 +08:00）
+				const offset = 8 * 60;
+				// 计算北京时间的时间戳
+				const beijingTime = new Date(now.getTime() + (offset + now.getTimezoneOffset()) * 60000);
+				// 返回 ISO 8601 格式的时间字符串（包含时区信息）
+				return beijingTime.toISOString().replace('Z', '+08:00');
 			},
 
-			// 格式化时间
-			formatTime(time) {
-				if (!time) return '暂无数据'
+			// 格式化时间显示
+			formatTime(timeStr) {
+				if (!timeStr) return '暂无数据';
+
 				try {
-					// 如果时间已经是 ISO 格式，直接格式化显示
-					if (time.includes('T')) {
-						return time.replace('T', ' ').slice(0, 19)
-					}
-					// 否则尝试转换为 ISO 格式
-					const date = new Date(time)
-					// 转换为北京时间
-					const beijingDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-					return beijingDate.toISOString().slice(0, 19).replace('Z', '')
+					// 解析 ISO 8601 时间字符串
+					const date = new Date(timeStr);
+					// 格式化为本地时间字符串
+					return date.toLocaleString('zh-CN', {
+						year: 'numeric',
+						month: '2-digit',
+						day: '2-digit',
+						hour: '2-digit',
+						minute: '2-digit',
+						second: '2-digit',
+						hour12: false
+					});
 				} catch (e) {
-					console.error('时间格式化失败:', e)
-					return time
+					console.error('时间格式化失败:', e);
+					return timeStr;
 				}
 			},
 
@@ -888,114 +896,26 @@
 
 			// 获取图片类型文本
 			getImageTypeText(type) {
-				const typeMap = {
-					detail: '详情图',
-					top: '上盖图',
-					stem: '轴心图',
-					spring: '弹簧图',
-					bottom: '底壳图',
-					side: '侧图',
-					housing: '外壳图',
-					other: '其他视图'
-				};
-				return typeMap[type] || type;
+				const option = this.imageTypeOptions.find(opt => opt.value === type)
+				// 如果找不到对应的类型，返回类型值本身
+				return option ? option.text : type
 			},
 
-			// 修改图片类型
-			async handleChangeImageType() {
+			// 处理类型选择
+			async handleTypeChange(e) {
+				const selectedType = this.imageTypeOptions[e.detail.value].value;
+				const currentImage = this.switchImages[this.currentImageIndex];
+
 				try {
-					// 第一组选项
-					const imageTypes = [
-						{ text: '详情图', value: 'detail' },
-						{ text: '上盖图', value: 'top' },
-						{ text: '轴心图', value: 'stem' },
-						{ text: '弹簧图', value: 'spring' },
-						{ text: '更多类型...', value: 'more' }
-					];
-
-					const result = await new Promise((resolve, reject) => {
-						uni.showActionSheet({
-							itemList: imageTypes.map(t => t.text),
-							itemColor: '#000000',
-							success: resolve,
-							fail: (err) => {
-								if (err.errMsg.includes('fail cancel')) {
-									resolve({ tapIndex: -1 });
-								} else {
-									reject(err);
-								}
-							}
-						});
-					});
-
-					if (result.tapIndex === -1) {
-						return;
-					}
-
-					// 如果选择"更多类型"，显示第二组选项
-					let selectedType = imageTypes[result.tapIndex].value;
-					if (selectedType === 'more') {
-						// 第二组选项
-						const moreTypes = [
-							{ text: '底壳图', value: 'bottom' },
-							{ text: '侧图', value: 'side' },
-							{ text: '外壳图', value: 'housing' },
-							{ text: '其他视图', value: 'other' },
-							{ text: '返回上级', value: 'back' }
-						];
-
-						const moreResult = await new Promise((resolve, reject) => {
-							uni.showActionSheet({
-								itemList: moreTypes.map(t => t.text),
-								itemColor: '#000000',
-								success: resolve,
-								fail: (err) => {
-									if (err.errMsg.includes('fail cancel')) {
-										resolve({ tapIndex: -1 });
-									} else {
-										reject(err);
-									}
-								}
-							});
-						});
-
-						if (moreResult.tapIndex === -1 || moreTypes[moreResult.tapIndex].value === 'back') {
-							// 如果取消或选择返回，重新调用本方法
-							this.handleChangeImageType();
-							return;
-						}
-
-						selectedType = moreTypes[moreResult.tapIndex].value;
-					}
-
-					// 检查"其他视图"的数量限制
-					if (selectedType === 'other' && this.currentImage.type !== 'other') {
-						const otherViewCount = this.switchImages.filter(img => img.type === 'other').length;
-						if (otherViewCount >= 3) {
-							uni.showToast({
-								title: '其他视图最多只能有3张',
-								icon: 'none'
-							});
-							return;
-						}
-					}
-
-					// 获取原始文件扩展名
-					const originalExt = 'jpg'; // 统一使用 jpg 格式
-
-					// 生成新的文件名
-					const newFileName = this.getImageFileName(selectedType, originalExt);
-
-					// 更新图片类型
+					// 更新图片信息
 					const imageInfo = {
-						...this.currentImage,
+						...currentImage,
 						type: selectedType,
-						fileName: newFileName,
 						updateTime: this.getBeiJingISOString()
 					};
 
-					// 更新数据库
-					const { result: updateTypeResult } = await uniCloud.callFunction({
+					// 调用云函数更新数据库
+					const { result } = await uniCloud.callFunction({
 						name: 'switchApi',
 						data: {
 							action: 'updateSwitchImage',
@@ -1005,17 +925,12 @@
 						}
 					});
 
-					// 检查返回结果
-					if (!updateTypeResult || updateTypeResult.errCode !== 0) {
-						throw new Error(updateTypeResult?.errMsg || '更新失败');
+					if (!result || result.errCode !== 0) {
+						throw new Error(result?.errMsg || '更新失败');
 					}
 
 					// 更新本地数据
 					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
-					this.switchData.preview_images = [...this.switchImages];
-
-					// 强制更新视图
-					this.$forceUpdate();
 
 					uni.showToast({
 						title: '类型修改成功',
@@ -1024,7 +939,7 @@
 				} catch (e) {
 					console.error('修改图片类型失败:', e);
 					uni.showToast({
-						title: '修改失败',
+						title: e.message || '修改失败',
 						icon: 'none'
 					});
 				}
@@ -1033,87 +948,6 @@
 			// 获取图片类型索引
 			getTypeIndex(type) {
 				return this.imageTypeOptions.findIndex(option => option.value === type);
-			},
-
-			// 处理类型变化
-			async handleTypeChange(e) {
-				// 如果是默认图片，不允许修改类型
-				if (!this.currentImage.fileID) {
-					uni.showToast({
-						title: '默认图片不能修改类型',
-						icon: 'none'
-					});
-					return;
-				}
-
-				const selectedType = this.imageTypeOptions[e.detail.value].value;
-
-				// 如果选择的类型与当前类型相同，不做处理
-				if (selectedType === this.currentImage.type) {
-					return;
-				}
-
-				// 检查"其他视图"的数量限制
-				if (selectedType === 'other' && this.currentImage.type !== 'other') {
-					const otherViewCount = this.switchImages.filter(img => img.type === 'other').length;
-					if (otherViewCount >= 3) {
-						uni.showToast({
-							title: '其他视图最多只能有3张',
-							icon: 'none'
-						});
-						return;
-					}
-				}
-
-				try {
-					// 获取原始文件扩展名
-					const originalExt = 'jpg'; // 统一使用 jpg 格式
-
-					// 生成新的文件名
-					const newFileName = this.getImageFileName(selectedType, originalExt);
-
-					// 更新图片类型
-					const imageInfo = {
-						...this.currentImage,
-						type: selectedType,
-						fileName: newFileName,
-						updateTime: this.getBeiJingISOString()
-					};
-
-					// 更新数据库
-					const { result: updateTypeResult } = await uniCloud.callFunction({
-						name: 'switchApi',
-						data: {
-							action: 'updateSwitchImage',
-							switchId: this.switchData._id,
-							imageIndex: this.currentImageIndex,
-							imageInfo: imageInfo
-						}
-					});
-
-					// 检查返回结果
-					if (!updateTypeResult || updateTypeResult.errCode !== 0) {
-						throw new Error(updateTypeResult?.errMsg || '更新失败');
-					}
-
-					// 更新本地数据
-					this.$set(this.switchImages, this.currentImageIndex, imageInfo);
-					this.switchData.preview_images = [...this.switchImages];
-
-					// 强制更新视图
-					this.$forceUpdate();
-
-					uni.showToast({
-						title: '类型修改成功',
-						icon: 'success'
-					});
-				} catch (e) {
-					console.error('修改图片类型失败:', e);
-					uni.showToast({
-						title: '修改失败',
-						icon: 'none'
-					});
-				}
 			},
 
 			// 添加通过 ID 加载数据的方法
@@ -1230,7 +1064,6 @@
 					newImages.unshift({
 						...currentImage,
 						type: 'detail',
-						fileName: 'main_image.jpg',
 						updateTime: this.getBeiJingISOString()
 					});
 

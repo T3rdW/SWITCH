@@ -194,14 +194,34 @@
 
 			// 处理列表项点击
 			async handleItemClick(item) {
+				// 如果元素有 isClicking 标记，说明正在处理点击，直接返回
+				if (item.isClicking) {
+					console.log('点击操作进行中，跳过重复点击', {
+						item: item.switch_name,
+						specs: {
+							force: item.actuation_force,
+							travel: item.actuation_travel
+						}
+					});
+					return;
+				}
+
 				// 如果正在导航中，直接返回
 				if (this.isNavigating) {
-					console.log('导航进行中，跳过重复点击');
+					console.log('导航进行中，跳过重复点击', {
+						item: item.switch_name,
+						specs: {
+							force: item.actuation_force,
+							travel: item.actuation_travel
+						}
+					});
 					return;
 				}
 
 				// 设置导航状态为true
 				this.isNavigating = true;
+				// 设置点击标记
+				this.$set(item, 'isClicking', true);
 
 				// 显示加载提示
 				uni.showLoading({
@@ -249,6 +269,8 @@
 					// 导航完成后重置状态
 					setTimeout(() => {
 						this.isNavigating = false;
+						// 重置点击标记
+						this.$set(item, 'isClicking', false);
 						// 确保加载提示被关闭
 						uni.hideLoading();
 					}, 500);
