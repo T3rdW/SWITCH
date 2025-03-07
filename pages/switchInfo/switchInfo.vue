@@ -111,14 +111,14 @@
 			<uni-list-item title="寿命" :right-text="switchData.lifespan || '暂无'" />
 
 			<!-- 其他信息 -->
-			<uni-list-item title="更新时间" :right-text="formatTime(switchData.update_time)" />
-			<uni-list-item title="数据来源" :right-text="switchData.data_source || '暂无'" />
+			<uni-list-item title="最后更新时间" :right-text="formatTime(switchData.update_time)" />
+			<uni-list-item title="数据来源" :right-text="switchData.data_source || '互联网'" />
 			<related-keyboards-item
 				:keyboards="getRelatedKeyboards(switchData.related_keyboards)"
 			/>
 			<uni-list-item title="停产" :right-text="switchData.discontinued ? '是' : '否'" />
-			<remark-item :remark="switchData.remark || '暂无'" />
-			<uni-list-item title="审核状态" :right-text="switchData.audit_status || '暂无'" />
+			<remark-item :remark="switchData.remark || ''" />
+			<uni-list-item title="审核状态" :right-text="getAuditStatusText(switchData.audit_status)" />
 		</uni-list>
 	</view>
 </template>
@@ -126,6 +126,13 @@
 <script>
 	import RelatedKeyboardsItem from '@/components/related-keyboards-item.vue'
 	import RemarkItem from '@/components/remark-item.vue'
+
+	// 审核状态映射
+	const AUDIT_STATUS_MAP = {
+		'pending': '未审核',
+		'reviewing': '审核中',
+		'approved': '已审核'
+	};
 
 	export default {
 		components: {
@@ -1101,6 +1108,11 @@
 						icon: 'none'
 					});
 				}
+			},
+
+			// 获取审核状态文本
+			getAuditStatusText(status) {
+				return AUDIT_STATUS_MAP[status] || '未审核';
 			}
 		}
 	}

@@ -11,7 +11,7 @@
 		props: {
 			remark: {
 				type: String,
-				default: '--'
+				default: ''
 			}
 		}
 	}

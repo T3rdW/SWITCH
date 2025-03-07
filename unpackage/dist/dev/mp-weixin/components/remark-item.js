@@ -5,7 +5,7 @@ const _sfc_main = {
   props: {
     remark: {
       type: String,
-      default: "--"
+      default: ""
     }
   }
 };

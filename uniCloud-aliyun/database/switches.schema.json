@@ -137,7 +137,8 @@
         "data_source": {
             "bsonType": "string",
             "description": "数据来源",
-            "title": "数据来源"
+            "title": "数据来源",
+            "defaultValue": "互联网"
         },
         "remark": {
             "bsonType": "string",
@@ -156,8 +157,15 @@
         },
         "audit_status": {
             "bsonType": "string",
-            "enum": ["pending", "approved", "rejected"],
-            "description": "审核状态"
+            "enum": ["pending", "reviewing", "approved"],
+            "description": "审核状态",
+            "defaultValue": "pending",
+            "title": "审核状态",
+            "enumDescription": {
+                "pending": "未审核",
+                "reviewing": "审核中",
+                "approved": "已审核"
+            }
         },
         "audit_by": {
             "bsonType": "string",
