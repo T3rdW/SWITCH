@@ -45,12 +45,12 @@ const _sfc_main = {
       var _a, _b;
       const keyword = this.searchKeyword.trim();
       if (!keyword) {
-        common_vendor.index.__f__("log", "at pages/index/index.vue:112", "搜索关键词为空");
+        common_vendor.index.__f__("log", "at pages/index/index.vue:125", "搜索关键词为空");
         return;
       }
       const chineseCharCount = ((_a = keyword.match(/[\u4e00-\u9fa5]/g)) == null ? void 0 : _a.length) || 0;
       if (chineseCharCount < 2) {
-        common_vendor.index.__f__("log", "at pages/index/index.vue:119", "搜索关键词过短,需要至少2个汉字", {
+        common_vendor.index.__f__("log", "at pages/index/index.vue:132", "搜索关键词过短,需要至少2个汉字", {
           keyword,
           chineseCharCount
         });
@@ -65,24 +65,24 @@ const _sfc_main = {
         title: "搜索中..."
       });
       try {
-        common_vendor.index.__f__("log", "at pages/index/index.vue:136", "开始搜索:", keyword);
+        common_vendor.index.__f__("log", "at pages/index/index.vue:149", "开始搜索:", keyword);
         const db = common_vendor.er.database();
         const res = await db.collection("switches").where({ switch_name: new RegExp(keyword, "i") }).get();
-        common_vendor.index.__f__("log", "at pages/index/index.vue:142", "搜索返回数据:", res);
+        common_vendor.index.__f__("log", "at pages/index/index.vue:155", "搜索返回数据:", res);
         this.switchList = Array.isArray(res.result.data) ? res.result.data : [];
         this.hasSearch = true;
         if (this.switchList.length === 0) {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:148", "搜索成功但无结果:", keyword);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:161", "搜索成功但无结果:", keyword);
           common_vendor.index.showToast({
             title: "未找到相关轴体",
             icon: "none"
           });
         } else {
-          common_vendor.index.__f__("log", "at pages/index/index.vue:154", "搜索成功, 找到记录数:", this.switchList.length);
+          common_vendor.index.__f__("log", "at pages/index/index.vue:167", "搜索成功, 找到记录数:", this.switchList.length);
           this.saveSearchHistory(keyword);
         }
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/index/index.vue:160", "搜索失败:", e);
+        common_vendor.index.__f__("error", "at pages/index/index.vue:173", "搜索失败:", e);
         this.switchList = [];
         common_vendor.index.showToast({
           title: "搜索失败",
@@ -90,7 +90,7 @@ const _sfc_main = {
         });
       } finally {
         common_vendor.index.hideLoading();
-        common_vendor.index.__f__("log", "at pages/index/index.vue:168", "搜索完成, 当前状态:", {
+        common_vendor.index.__f__("log", "at pages/index/index.vue:181", "搜索完成, 当前状态:", {
           hasSearch: this.hasSearch,
           resultCount: ((_b = this.switchList) == null ? void 0 : _b.length) || 0,
           keyword
@@ -99,7 +99,7 @@ const _sfc_main = {
     },
     // 处理清除搜索
     handleClear() {
-      common_vendor.index.__f__("log", "at pages/index/index.vue:178", "清除搜索:", {
+      common_vendor.index.__f__("log", "at pages/index/index.vue:191", "清除搜索:", {
         oldKeyword: this.searchKeyword,
         oldResultCount: this.switchList.length
       });
@@ -107,7 +107,7 @@ const _sfc_main = {
       this.switchList = [];
       this.hasSearch = false;
       this.showHistory = true;
-      common_vendor.index.__f__("log", "at pages/index/index.vue:186", "搜索已清除");
+      common_vendor.index.__f__("log", "at pages/index/index.vue:199", "搜索已清除");
     },
     // 处理搜索历史点击
     handleHistoryClick(keyword) {
@@ -117,7 +117,7 @@ const _sfc_main = {
     // 处理列表项点击
     async handleItemClick(item) {
       if (item.isClicking) {
-        common_vendor.index.__f__("log", "at pages/index/index.vue:199", "点击操作进行中，跳过重复点击", {
+        common_vendor.index.__f__("log", "at pages/index/index.vue:212", "点击操作进行中，跳过重复点击", {
           item: item.switch_name,
           specs: {
             force: item.actuation_force,
@@ -127,7 +127,7 @@ const _sfc_main = {
         return;
       }
       if (this.isNavigating) {
-        common_vendor.index.__f__("log", "at pages/index/index.vue:211", "导航进行中，跳过重复点击", {
+        common_vendor.index.__f__("log", "at pages/index/index.vue:224", "导航进行中，跳过重复点击", {
           item: item.switch_name,
           specs: {
             force: item.actuation_force,
@@ -144,20 +144,20 @@ const _sfc_main = {
         // 使用遮罩防止重复点击
       });
       try {
-        common_vendor.index.__f__("log", "at pages/index/index.vue:233", "点击轴体项:", item);
-        common_vendor.index.__f__("log", "at pages/index/index.vue:234", "准备跳转到详情页, ID:", item._id);
+        common_vendor.index.__f__("log", "at pages/index/index.vue:246", "点击轴体项:", item);
+        common_vendor.index.__f__("log", "at pages/index/index.vue:247", "准备跳转到详情页, ID:", item._id);
         await common_vendor.index.navigateTo({
           url: `/pages/switchInfo/switchInfo?id=${item._id}`,
           success: async () => {
-            common_vendor.index.__f__("log", "at pages/index/index.vue:240", "跳转成功");
+            common_vendor.index.__f__("log", "at pages/index/index.vue:253", "跳转成功");
             setTimeout(() => {
               common_vendor.index.$emit("switchData", item);
-              common_vendor.index.__f__("log", "at pages/index/index.vue:245", "数据已传递到详情页");
+              common_vendor.index.__f__("log", "at pages/index/index.vue:258", "数据已传递到详情页");
               common_vendor.index.hideLoading();
             }, 100);
           },
           fail: (err) => {
-            common_vendor.index.__f__("error", "at pages/index/index.vue:251", "跳转失败:", err);
+            common_vendor.index.__f__("error", "at pages/index/index.vue:264", "跳转失败:", err);
             common_vendor.index.hideLoading();
             common_vendor.index.showToast({
               title: "跳转失败",
@@ -166,7 +166,7 @@ const _sfc_main = {
           }
         });
       } catch (e) {
-        common_vendor.index.__f__("error", "at pages/index/index.vue:261", "跳转失败:", e);
+        common_vendor.index.__f__("error", "at pages/index/index.vue:274", "跳转失败:", e);
         common_vendor.index.hideLoading();
         common_vendor.index.showToast({
           title: "跳转失败",
@@ -182,19 +182,19 @@ const _sfc_main = {
     },
     // 保存搜索历史
     saveSearchHistory(keyword) {
-      common_vendor.index.__f__("log", "at pages/index/index.vue:282", "保存搜索历史:", keyword);
+      common_vendor.index.__f__("log", "at pages/index/index.vue:295", "保存搜索历史:", keyword);
       const index = this.searchHistory.indexOf(keyword);
       if (index > -1) {
-        common_vendor.index.__f__("log", "at pages/index/index.vue:285", "关键词已存在,位置:", index);
+        common_vendor.index.__f__("log", "at pages/index/index.vue:298", "关键词已存在,位置:", index);
         this.searchHistory.splice(index, 1);
       }
       this.searchHistory.unshift(keyword);
       if (this.searchHistory.length > 10) {
-        common_vendor.index.__f__("log", "at pages/index/index.vue:292", "历史记录超过10条,移除最后一条");
+        common_vendor.index.__f__("log", "at pages/index/index.vue:305", "历史记录超过10条,移除最后一条");
         this.searchHistory.pop();
       }
       common_vendor.index.setStorageSync("searchHistory", JSON.stringify(this.searchHistory));
-      common_vendor.index.__f__("log", "at pages/index/index.vue:298", "当前搜索历史:", this.searchHistory);
+      common_vendor.index.__f__("log", "at pages/index/index.vue:311", "当前搜索历史:", this.searchHistory);
     },
     // 清空搜索历史
     clearHistory() {
@@ -211,12 +211,12 @@ const _sfc_main = {
     },
     // 获取规格文本
     getSpecText(item) {
-      common_vendor.index.__f__("log", "at pages/index/index.vue:317", "规格数据:", item);
+      common_vendor.index.__f__("log", "at pages/index/index.vue:330", "规格数据:", item);
       const force = item.actuation_force;
       const actuationForce = force ? `触发压力: ${force.toString().toLowerCase().includes("gf") ? force : `${force}gf`}` : "";
       const actuationTravel = item.actuation_travel ? ` 触发行程: ${item.actuation_travel}` : "";
       const text = actuationForce + actuationTravel;
-      common_vendor.index.__f__("log", "at pages/index/index.vue:323", "规格文本:", text);
+      common_vendor.index.__f__("log", "at pages/index/index.vue:336", "规格文本:", text);
       return text || "暂无规格信息";
     },
     // 获取价格文本

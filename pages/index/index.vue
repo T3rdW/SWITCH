@@ -1,5 +1,18 @@
 <template>
 	<view class="container">
+		<!-- 通告栏 -->
+		<!-- <uni-notice-bar
+			:speed="10"
+			:show-icon="true"
+			:show-close="true"
+			:scrollable="true"
+			:single="true"
+			text="欢迎使用轴体搜索小程序，目前数据持续更新中..."
+			backgroundColor="#ECF5FF"
+			color="#409EFF"
+			class="notice-bar"
+		/> -->
+
 		<!-- 搜索栏 -->
 		<uni-search-bar
 			v-model="searchKeyword"
@@ -356,6 +369,23 @@
 	.container {
 		padding: 10px;
 		position: relative;  // 添加相对定位
+	}
+
+	.notice-bar {
+		margin-bottom: 10px;
+		border-radius: 4px;
+
+		:deep(.uni-noticebar) {
+			padding: 8px 12px;
+		}
+
+		:deep(.uni-noticebar__content) {
+			font-size: 13px;
+		}
+
+		:deep(.uni-noticebar__icon) {
+			margin-right: 5px;
+		}
 	}
 
 	.search-result {

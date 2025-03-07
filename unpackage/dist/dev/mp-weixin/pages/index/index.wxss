@@ -4,6 +4,19 @@
   padding: 10px;
   position: relative;
 }
+.notice-bar {
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+.notice-bar .uni-noticebar {
+  padding: 8px 12px;
+}
+.notice-bar .uni-noticebar__content {
+  font-size: 13px;
+}
+.notice-bar .uni-noticebar__icon {
+  margin-right: 5px;
+}
 .search-result {
   margin-top: 10px;
 }
