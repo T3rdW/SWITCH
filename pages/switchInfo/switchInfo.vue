@@ -568,33 +568,38 @@
 			// 处理添加图片
 			async handleAddImage() {
 				try {
+					// 选择图片
 					const res = await uni.chooseImage({
 						count: 1,
 						sizeType: ['compressed'],
 						sourceType: ['album', 'camera']
 					});
 
-					const tempFilePath = res.tempFilePaths[0];
+					// 如果用户取消选择，直接返回
+					if (!res || !res.tempFilePaths || !res.tempFilePaths.length) {
+						console.log('用户取消选择图片');
+						return;
+					}
 
-					// 压缩图片
-					const compressedPath = await this.compressImage(tempFilePath);
-
-					// 获取原始文件扩展名
-					const originalExt = 'jpg'; // 统一使用 jpg 格式
-
-					// 使用规范的文件命名
-					const fileName = this.getImageFileName('detail', originalExt);
-					const cloudPath = fileName;
-
-					// 上传到云存储
-					const uploadRes = await uniCloud.uploadFile({
-						filePath: compressedPath,
-						cloudPath: cloudPath,
+					// 显示加载提示
+					uni.showLoading({
+						title: '处理中...',
+						mask: true
 					});
 
-					console.log('文件上传成功:', uploadRes);
+					// 压缩图片
+					const compressedPath = await this.compressImage(res.tempFilePaths[0]);
 
-					// 构建图片信息对象
+					// 生成文件名
+					const fileName = this.getImageFileName('detail', compressedPath.split('.').pop());
+
+					// 上传图片
+					const uploadRes = await uniCloud.uploadFile({
+						filePath: compressedPath,
+						cloudPath: fileName
+					});
+
+					// 添加到图片数组
 					const imageInfo = {
 						fileID: uploadRes.fileID,
 						type: 'detail',
@@ -604,36 +609,22 @@
 					};
 
 					// 更新数据库
-					const { result: updateResult } = await uniCloud.callFunction({
-						name: 'switchApi',
-						data: {
-							action: 'updateSwitchImage',
-							switchId: this.switchData._id,
-							imageIndex: this.switchImages.length,
-							imageInfo: imageInfo
-						}
-					});
+					await this.updateSwitchImage(imageInfo);
 
-					if (!updateResult || updateResult.errCode !== 0) {
-						throw new Error(updateResult?.errMsg || '更新失败');
-					}
-
-					// 更新本地数据
-					this.switchImages.push(imageInfo);
-					this.switchData.preview_images = [...this.switchImages];
-
-					// 切换到新添加的图片
-					this.currentImageIndex = this.switchImages.length - 1;
-
-					// 强制更新视图
-					this.$forceUpdate();
-
+					uni.hideLoading();
 					uni.showToast({
 						title: '添加成功',
 						icon: 'success'
 					});
 				} catch (e) {
+					// 用户取消选择图片时不显示错误提示
+					if (e.errMsg === 'chooseImage:fail cancel') {
+						console.log('用户取消选择图片');
+						return;
+					}
+
 					console.error('添加图片失败:', e);
+					uni.hideLoading();
 					uni.showToast({
 						title: e.message || '添加失败',
 						icon: 'none'
