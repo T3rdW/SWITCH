@@ -162,15 +162,48 @@ exports.main = async (event, context) => {
 			try {
 				const favoriteDB = db.collection('user_favorites');
 
-				// 查询是否已收藏
-				const favoriteRecord = await favoriteDB.where({
-					openid: openid,
-					switch_id: switchId
+				// 查询用户收藏记录
+				const userFavorite = await favoriteDB.where({
+					openid: openid
 				}).get();
 
+				// 当前时间
+				const now = new Date();
+
+				// 如果用户没有收藏记录，创建新记录
+				if (!userFavorite.data || userFavorite.data.length === 0) {
+					// 添加新收藏
+					await favoriteDB.add({
+						openid: openid,
+						favorites: [{
+							switch_id: switchId,
+							create_time: now
+						}],
+						update_time: now
+					});
+
+					return {
+						errCode: 0,
+						isFavorited: true,
+						errMsg: '收藏成功'
+					};
+				}
+
+				// 获取现有收藏记录
+				const record = userFavorite.data[0];
+				const favorites = record.favorites || [];
+
+				// 检查是否已收藏
+				const index = favorites.findIndex(item => item.switch_id === switchId);
+
 				// 如果已收藏，则取消收藏
-				if (favoriteRecord.data && favoriteRecord.data.length > 0) {
-					await favoriteDB.doc(favoriteRecord.data[0]._id).remove();
+				if (index !== -1) {
+					favorites.splice(index, 1);
+					await favoriteDB.doc(record._id).update({
+						favorites: favorites,
+						update_time: now
+					});
+
 					return {
 						errCode: 0,
 						isFavorited: false,
@@ -179,11 +212,16 @@ exports.main = async (event, context) => {
 				}
 				// 如果未收藏，则添加收藏
 				else {
-					await favoriteDB.add({
-						openid: openid,
+					favorites.push({
 						switch_id: switchId,
-						create_time: new Date()
+						create_time: now
 					});
+
+					await favoriteDB.doc(record._id).update({
+						favorites: favorites,
+						update_time: now
+					});
+
 					return {
 						errCode: 0,
 						isFavorited: true,
@@ -212,15 +250,28 @@ exports.main = async (event, context) => {
 			try {
 				const favoriteDB = db.collection('user_favorites');
 
-				// 查询是否已收藏
-				const favoriteRecord = await favoriteDB.where({
-					openid: openid,
-					switch_id: switchId
+				// 查询用户收藏记录
+				const userFavorite = await favoriteDB.where({
+					openid: openid
 				}).get();
+
+				// 如果用户没有收藏记录，返回未收藏
+				if (!userFavorite.data || userFavorite.data.length === 0) {
+					return {
+						errCode: 0,
+						isFavorited: false
+					};
+				}
+
+				// 获取收藏列表
+				const favorites = userFavorite.data[0].favorites || [];
+
+				// 检查是否已收藏
+				const isFavorited = favorites.some(item => item.switch_id === switchId);
 
 				return {
 					errCode: 0,
-					isFavorited: favoriteRecord.data && favoriteRecord.data.length > 0
+					isFavorited: isFavorited
 				};
 			} catch (e) {
 				console.error('检查收藏状态失败:', e);
@@ -244,20 +295,31 @@ exports.main = async (event, context) => {
 			try {
 				const favoriteDB = db.collection('user_favorites');
 
-				// 查询用户所有收藏
-				const favoriteRecords = await favoriteDB.where({
+				// 查询用户收藏记录
+				const userFavorite = await favoriteDB.where({
 					openid: openid
 				}).get();
 
+				// 如果用户没有收藏记录，返回空数组
+				if (!userFavorite.data || userFavorite.data.length === 0) {
+					return {
+						errCode: 0,
+						data: []
+					};
+				}
+
 				// 提取收藏数据
-				const favorites = favoriteRecords.data.map(item => ({
+				const favorites = userFavorite.data[0].favorites || [];
+
+				// 转换为前端需要的格式
+				const result = favorites.map(item => ({
 					switchId: item.switch_id,
 					createTime: item.create_time
 				}));
 
 				return {
 					errCode: 0,
-					data: favorites
+					data: result
 				};
 			} catch (e) {
 				console.error('获取收藏数据失败:', e);

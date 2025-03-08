@@ -180,44 +180,17 @@
 		},
 
 		onLoad(options) {
-			if (!options.id) {
-				console.error('缺少必要的轴体ID参数');
-				uni.showToast({
-					title: '参数错误',
-					icon: 'none'
-				});
-				return;
+			if (options.id) {
+				this.loadSwitchData(options.id);
 			}
+		},
 
-			// 监听数据传递事件
-			uni.$on('switchData', this.handleSwitchData);
-
-			// 设置加载超时
-			const timeout = 300; // 增加等待时间到300ms
-
-			// 创建Promise竞争
-			Promise.race([
-				// 等待首页数据传递
-				new Promise(resolve => {
-					this.waitForData = resolve; // 保存resolve函数以便在handleSwitchData中调用
-				}),
-				// 超时后从数据库加载
-				new Promise(resolve => {
-					setTimeout(() => {
-						resolve('timeout');
-					}, timeout);
-				})
-			]).then(result => {
-				if (result === 'timeout' && !this.switchData._id) {
-					console.log('首页数据传递超时，从数据库加载:', options.id);
-					this.loadSwitchDataById(options.id);
-				}
-			});
-
-			// 页面加载完成后检查收藏状态
-			this.$nextTick(() => {
+		// 在页面显示时检查收藏状态
+		onShow() {
+			// 如果已加载轴体数据，检查收藏状态
+			if (this.switchData._id) {
 				this.checkFavoriteStatus();
-			});
+			}
 		},
 
 		onUnload() {
@@ -986,29 +959,45 @@
 			},
 
 			// 添加通过 ID 加载数据的方法
-			async loadSwitchDataById(id) {
+			async loadSwitchData(id) {
 				try {
-					console.log('开始从数据库加载轴体数据...')
+					this.isLoading = true;
 					const { result } = await uniCloud.callFunction({
 						name: 'switchApi',
 						data: {
 							action: 'getSwitchById',
 							id: id
 						}
-					})
+					});
 
-					if (result && result.errCode === 0 && result.data) {
-						console.log('数据库加载成功')
-						this.handleSwitchData(result.data)
+					if (result.errCode === 0 && result.data) {
+						this.switchData = result.data;
+
+						// 处理图片数据
+						if (Array.isArray(this.switchData.preview_images)) {
+							this.switchImages = [...this.switchData.preview_images];
+						} else {
+							this.switchImages = [];
+						}
+
+						// 数据加载完成后检查收藏状态
+						this.$nextTick(() => {
+							this.checkFavoriteStatus();
+						});
 					} else {
-						throw new Error(result?.errMsg || '加载失败')
+						uni.showToast({
+							title: '获取数据失败',
+							icon: 'none'
+						});
 					}
 				} catch (e) {
-					console.error('从数据库加载数据失败:', e)
+					console.error('加载轴体数据失败:', e);
 					uni.showToast({
 						title: '加载失败',
 						icon: 'none'
-					})
+					});
+				} finally {
+					this.isLoading = false;
 				}
 			},
 
@@ -1171,12 +1160,33 @@
 
 					if (result.errCode === 0) {
 						this.isFavorited = result.isFavorited;
+
+						// 更新全局收藏数据
+						if (result.isFavorited) {
+							// 添加到收藏
+							app.globalData.favorites.push({
+								switchId: this.switchData._id,
+								createTime: new Date()
+							});
+							console.log('添加到全局收藏:', this.switchData._id);
+						} else {
+							// 从收藏中移除
+							const index = app.globalData.favorites.findIndex(item => item.switchId === this.switchData._id);
+							if (index !== -1) {
+								app.globalData.favorites.splice(index, 1);
+								console.log('从全局收藏中移除:', this.switchData._id);
+							}
+						}
+
 						uni.showToast({
-							title: this.isFavorited ? '已收藏' : '已取消收藏',
+							title: result.isFavorited ? '收藏成功' : '已取消收藏',
 							icon: 'success'
 						});
 					} else {
-						throw new Error(result.errMsg);
+						uni.showToast({
+							title: result.errMsg || '操作失败',
+							icon: 'none'
+						});
 					}
 				} catch (e) {
 					console.error('收藏操作失败:', e);
@@ -1187,10 +1197,20 @@
 				}
 			},
 
-			// 在页面加载时检查收藏状态
+			// 检查收藏状态
 			async checkFavoriteStatus() {
 				const app = getApp();
-				if (!app.globalData.userInfo?.openid) return;
+				if (!app.globalData.userInfo?.openid || !this.switchData._id) return;
+
+				// 首先检查全局收藏数据
+				if (app.globalData.favorites && app.globalData.favorites.length > 0) {
+					const found = app.globalData.favorites.some(item => item.switchId === this.switchData._id);
+					if (found) {
+						this.isFavorited = true;
+						console.log('从全局数据中确认已收藏');
+						return;
+					}
+				}
 
 				try {
 					const { result } = await uniCloud.callFunction({
@@ -1204,6 +1224,7 @@
 
 					if (result.errCode === 0) {
 						this.isFavorited = result.isFavorited;
+						console.log('收藏状态:', this.isFavorited);
 					}
 				} catch (e) {
 					console.error('检查收藏状态失败:', e);

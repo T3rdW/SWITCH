@@ -1,6 +1,6 @@
 {
     "bsonType": "object",
-    "required": ["openid", "switch_id", "create_time"],
+    "required": ["openid", "favorites"],
     "permission": {
         "read": true,
         "create": true,
@@ -15,13 +15,27 @@
             "bsonType": "string",
             "description": "用户OpenID"
         },
-        "switch_id": {
-            "bsonType": "string",
-            "description": "轴体ID"
+        "favorites": {
+            "bsonType": "array",
+            "description": "收藏的轴体列表",
+            "items": {
+                "bsonType": "object",
+                "required": ["switch_id", "create_time"],
+                "properties": {
+                    "switch_id": {
+                        "bsonType": "string",
+                        "description": "轴体ID"
+                    },
+                    "create_time": {
+                        "bsonType": "timestamp",
+                        "description": "收藏时间"
+                    }
+                }
+            }
         },
-        "create_time": {
+        "update_time": {
             "bsonType": "timestamp",
-            "description": "收藏时间"
+            "description": "最后更新时间"
         }
     }
 }
