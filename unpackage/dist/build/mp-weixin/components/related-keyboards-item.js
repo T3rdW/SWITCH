@@ -1,1 +1,0 @@
-"use strict";const e=require("../common/vendor.js"),r={name:"RelatedKeyboardsItem",props:{keyboards:{type:String,default:"--"}}};const t=e._export_sfc(r,[["render",function(r,t,o,n,s,a){return{a:e.t(o.keyboards)}}]]);wx.createComponent(t);

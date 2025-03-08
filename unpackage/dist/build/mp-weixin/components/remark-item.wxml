@@ -1,1 +1,0 @@
-<view class="remark-item"><view class="title">备注</view><view class="content">{{a}}</view></view>

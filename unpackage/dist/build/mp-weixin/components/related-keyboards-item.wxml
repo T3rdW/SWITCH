@@ -1,1 +1,0 @@
-<view class="related-keyboards-item"><view class="title">相关键盘</view><view class="content">{{a}}</view></view>

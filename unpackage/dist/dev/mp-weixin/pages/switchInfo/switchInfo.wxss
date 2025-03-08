@@ -1,5 +1,3 @@
-/* 水平间距 */
-/* 水平间距 */
 .container {
   min-height: 100vh;
   background-color: #f5f5f5;
@@ -268,4 +266,37 @@
 }
 .switch-image:active {
   opacity: 0.8;
+}
+.favorite-btn {
+  position: fixed;
+  top: var(--window-top, 0);
+  left: 10px;
+  z-index: 999;
+  padding: 4px;
+  width: 30px;
+  height: 30px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 6px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.favorite-btn .favorite-icon {
+  font-size: 28px;
+  color: #666;
+  transition: all 0.3s ease;
+  display: inline-block;
+  line-height: 1;
+  margin-top: -2px;
+}
+.favorite-btn .favorite-icon.is-favorited {
+  color: #ff5a5f;
+  transform: scale(1.15);
+}
+.favorite-btn:active {
+  transform: scale(0.95);
+  background-color: white;
 }

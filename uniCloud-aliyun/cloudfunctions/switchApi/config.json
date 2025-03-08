@@ -1,9 +1,4 @@
 {
   "timeout": 60000,
-  "memorySize": 256,
-  "mp-weixin": {
-    "permission": {
-      "scope.userLocation": false
-    }
-  }
+  "memorySize": 256
 }

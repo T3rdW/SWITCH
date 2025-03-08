@@ -6,10 +6,48 @@ const fs = require('fs')
 exports.main = async (event, context) => {
 	console.log('event : ', event)
 
-	// 添加基础错误处理
-	try {
+	const { action, code } = event;
 
-	switch (event.action) {
+	switch (action) {
+		case 'silentLogin':
+			try {
+				// 直接使用微信小程序API获取openid
+				const appid = 'wx42b1bce7eb958f9d';
+				const secret = 'd14617509df50df90f0c212988e8238c';
+
+				if (!code) {
+					return {
+						errCode: -1,
+						errMsg: '缺少code参数'
+					};
+				}
+
+				// 调用微信接口获取openid
+				const res = await uniCloud.httpclient.request(
+					`https://api.weixin.qq.com/sns/jscode2session?appid=${appid}&secret=${secret}&js_code=${code}&grant_type=authorization_code`,
+					{
+						dataType: 'json'
+					}
+				);
+
+				if (res.status === 200 && res.data && res.data.openid) {
+					return {
+						errCode: 0,
+						openid: res.data.openid
+					};
+				} else {
+					return {
+						errCode: -1,
+						errMsg: res.data.errmsg || '获取openid失败'
+					};
+				}
+			} catch (e) {
+				return {
+					errCode: -1,
+					errMsg: e.message
+				};
+			}
+			break;
 		case 'search':
 			// 搜索不需要权限验证
 			return await searchSwitches(event.params)
@@ -110,20 +148,130 @@ exports.main = async (event, context) => {
 				}
 			}
 		}
+		case 'toggleFavorite': {
+			const { switchId, openid } = event;
+
+			// 参数验证
+			if (!switchId || !openid) {
+				return {
+					errCode: 1,
+					errMsg: '参数不完整'
+				};
+			}
+
+			try {
+				const favoriteDB = db.collection('user_favorites');
+
+				// 查询是否已收藏
+				const favoriteRecord = await favoriteDB.where({
+					openid: openid,
+					switch_id: switchId
+				}).get();
+
+				// 如果已收藏，则取消收藏
+				if (favoriteRecord.data && favoriteRecord.data.length > 0) {
+					await favoriteDB.doc(favoriteRecord.data[0]._id).remove();
+					return {
+						errCode: 0,
+						isFavorited: false,
+						errMsg: '取消收藏成功'
+					};
+				}
+				// 如果未收藏，则添加收藏
+				else {
+					await favoriteDB.add({
+						openid: openid,
+						switch_id: switchId,
+						create_time: new Date()
+					});
+					return {
+						errCode: 0,
+						isFavorited: true,
+						errMsg: '收藏成功'
+					};
+				}
+			} catch (e) {
+				console.error('收藏操作失败:', e);
+				return {
+					errCode: 1,
+					errMsg: '操作失败: ' + e.message
+				};
+			}
+		}
+		case 'checkFavorite': {
+			const { switchId, openid } = event;
+
+			// 参数验证
+			if (!switchId || !openid) {
+				return {
+					errCode: 1,
+					errMsg: '参数不完整'
+				};
+			}
+
+			try {
+				const favoriteDB = db.collection('user_favorites');
+
+				// 查询是否已收藏
+				const favoriteRecord = await favoriteDB.where({
+					openid: openid,
+					switch_id: switchId
+				}).get();
+
+				return {
+					errCode: 0,
+					isFavorited: favoriteRecord.data && favoriteRecord.data.length > 0
+				};
+			} catch (e) {
+				console.error('检查收藏状态失败:', e);
+				return {
+					errCode: 1,
+					errMsg: '查询失败: ' + e.message
+				};
+			}
+		}
+		case 'getUserFavorites': {
+			const { openid } = event;
+
+			// 参数验证
+			if (!openid) {
+				return {
+					errCode: 1,
+					errMsg: '参数不完整'
+				};
+			}
+
+			try {
+				const favoriteDB = db.collection('user_favorites');
+
+				// 查询用户所有收藏
+				const favoriteRecords = await favoriteDB.where({
+					openid: openid
+				}).get();
+
+				// 提取收藏数据
+				const favorites = favoriteRecords.data.map(item => ({
+					switchId: item.switch_id,
+					createTime: item.create_time
+				}));
+
+				return {
+					errCode: 0,
+					data: favorites
+				};
+			} catch (e) {
+				console.error('获取收藏数据失败:', e);
+				return {
+					errCode: 1,
+					errMsg: '查询失败: ' + e.message
+				};
+			}
+		}
 		default:
 			return {
 				errCode: -1,
 				errMsg: '未知操作'
 			}
-	}
-
-	} catch (error) {
-		console.error('云函数执行错误:', error)
-		return {
-			errCode: -1,
-			errMsg: '服务异常，请稍后重试',
-			error: process.env.NODE_ENV === 'development' ? error : undefined
-		}
 	}
 }
 

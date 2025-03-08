@@ -1,5 +1,12 @@
 <template>
 	<view class="container">
+		<!-- 添加收藏按钮 -->
+		<view class="favorite-btn" @tap="handleFavorite">
+			<text :class="['favorite-icon', { 'is-favorited': isFavorited }]">
+				{{ isFavorited ? '♥' : '♡' }}
+			</text>
+		</view>
+
 		<!-- 图片管理遮罩层 -->
 		<view class="edit-overlay" v-if="isEditing">
 			<view class="edit-container">
@@ -160,7 +167,9 @@
 				],
 				MAX_WIDTH: 1280,
 				MAX_HEIGHT: 1280,
-				QUALITY: 0.8
+				QUALITY: 0.8,
+				waitForData: null, // 用于等待数据传递的Promise竞争
+				isFavorited: false, // 是否已收藏
 			}
 		},
 
@@ -171,26 +180,50 @@
 		},
 
 		onLoad(options) {
-			console.log('详情页面加载, 参数:', options)
-			// 监听数据传递事件
-			uni.$on('switchData', this.handleSwitchData)
-
-			// 如果没有立即收到数据，可以使用 ID 加载
-			if (options.id) {
-				console.log('准备使用 ID 加载数据:', options.id)
-				// 给事件监听一些时间来接收数据
-				setTimeout(() => {
-					if (!this.switchData._id) {
-						console.log('未收到数据，从服务器加载')
-						this.loadSwitchDataById(options.id)
-					}
-				}, 200)
+			if (!options.id) {
+				console.error('缺少必要的轴体ID参数');
+				uni.showToast({
+					title: '参数错误',
+					icon: 'none'
+				});
+				return;
 			}
+
+			// 监听数据传递事件
+			uni.$on('switchData', this.handleSwitchData);
+
+			// 设置加载超时
+			const timeout = 300; // 增加等待时间到300ms
+
+			// 创建Promise竞争
+			Promise.race([
+				// 等待首页数据传递
+				new Promise(resolve => {
+					this.waitForData = resolve; // 保存resolve函数以便在handleSwitchData中调用
+				}),
+				// 超时后从数据库加载
+				new Promise(resolve => {
+					setTimeout(() => {
+						resolve('timeout');
+					}, timeout);
+				})
+			]).then(result => {
+				if (result === 'timeout' && !this.switchData._id) {
+					console.log('首页数据传递超时，从数据库加载:', options.id);
+					this.loadSwitchDataById(options.id);
+				}
+			});
+
+			// 页面加载完成后检查收藏状态
+			this.$nextTick(() => {
+				this.checkFavoriteStatus();
+			});
 		},
 
 		onUnload() {
-			// 页面卸载时移除事件监听
-			uni.$off('switchData', this.handleSwitchData)
+			// 清理事件监听和等待函数
+			uni.$off('switchData', this.handleSwitchData);
+			this.waitForData = null;
 		},
 
 		methods: {
@@ -204,23 +237,24 @@
 
 			// 处理传递来的轴体数据
 			handleSwitchData(data) {
-				console.log('接收到轴体数据:', data)
-				// 打印完整的图片数组信息
-				console.log('原始 preview_images:', data.preview_images)
-
-				// 如果已经有相同的数据，不需要重新设置
 				if (this.switchData._id === data._id) {
-					console.log('已有相同数据，跳过更新');
+					console.log('已有相同数据，跳过更新:', {
+						switchName: data.switch_name,
+						id: data._id
+					});
 					return;
 				}
 
-				this.switchData = data
-				// 处理图片数组，只保留有效的 fileID
+				console.log('接收到首页传递的数据:', {
+					switchName: data.switch_name,
+					id: data._id,
+					imageCount: Array.isArray(data.preview_images) ? data.preview_images.length : 0
+				});
+
+				this.switchData = data;
 				if (Array.isArray(data.preview_images)) {
-					// 如果图片数据无效，使用默认图片
 					this.switchImages = data.preview_images.map(img => {
 						if (!img || !img.fileID) {
-							console.log('发现无效图片数据，使用默认图片:', img);
 							return {
 								fileID: '/static/default_switch.webp',
 								type: 'detail',
@@ -231,10 +265,7 @@
 						}
 						return img;
 					});
-					console.log('处理后的图片数组:', this.switchImages);
 				} else {
-					console.log('preview_images 不是数组:', data.preview_images);
-					// 如果没有图片数组，使用默认图片
 					this.switchImages = [{
 						fileID: '/static/default_switch.webp',
 						type: 'detail',
@@ -244,11 +275,17 @@
 					}];
 				}
 
-				// 更新页面标题为轴体名称
+				// 更新页面标题
 				if (data.switch_name) {
 					wx.setNavigationBarTitle({
 						title: data.switch_name
 					});
+				}
+
+				// 通知等待已收到数据
+				if (this.waitForData) {
+					this.waitForData('received');
+					this.waitForData = null;
 				}
 			},
 
@@ -951,6 +988,7 @@
 			// 添加通过 ID 加载数据的方法
 			async loadSwitchDataById(id) {
 				try {
+					console.log('开始从数据库加载轴体数据...')
 					const { result } = await uniCloud.callFunction({
 						name: 'switchApi',
 						data: {
@@ -960,12 +998,13 @@
 					})
 
 					if (result && result.errCode === 0 && result.data) {
+						console.log('数据库加载成功')
 						this.handleSwitchData(result.data)
 					} else {
 						throw new Error(result?.errMsg || '加载失败')
 					}
 				} catch (e) {
-					console.error('加载数据失败:', e)
+					console.error('从数据库加载数据失败:', e)
 					uni.showToast({
 						title: '加载失败',
 						icon: 'none'
@@ -1104,6 +1143,71 @@
 			// 获取审核状态文本
 			getAuditStatusText(status) {
 				return AUDIT_STATUS_MAP[status] || '未审核';
+			},
+
+			// 处理收藏按钮点击
+			async handleFavorite() {
+				const app = getApp();
+
+				// 检查是否已登录
+				if (!app.globalData.userInfo?.openid) {
+					console.log('用户未登录');
+					uni.showToast({
+						title: '请先登录',
+						icon: 'none'
+					});
+					return;
+				}
+
+				try {
+					const { result } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'toggleFavorite',
+							switchId: this.switchData._id,
+							openid: app.globalData.userInfo.openid
+						}
+					});
+
+					if (result.errCode === 0) {
+						this.isFavorited = result.isFavorited;
+						uni.showToast({
+							title: this.isFavorited ? '已收藏' : '已取消收藏',
+							icon: 'success'
+						});
+					} else {
+						throw new Error(result.errMsg);
+					}
+				} catch (e) {
+					console.error('收藏操作失败:', e);
+					uni.showToast({
+						title: '操作失败',
+						icon: 'none'
+					});
+				}
+			},
+
+			// 在页面加载时检查收藏状态
+			async checkFavoriteStatus() {
+				const app = getApp();
+				if (!app.globalData.userInfo?.openid) return;
+
+				try {
+					const { result } = await uniCloud.callFunction({
+						name: 'switchApi',
+						data: {
+							action: 'checkFavorite',
+							switchId: this.switchData._id,
+							openid: app.globalData.userInfo.openid
+						}
+					});
+
+					if (result.errCode === 0) {
+						this.isFavorited = result.isFavorited;
+					}
+				} catch (e) {
+					console.error('检查收藏状态失败:', e);
+				}
 			}
 		}
 	}
@@ -1425,6 +1529,43 @@
 		/* 添加点击反馈 */
 		&:active {
 			opacity: 0.8;
+		}
+	}
+
+	.favorite-btn {
+		position: fixed;
+		top: var(--window-top, 0);
+		left: 10px;
+		z-index: 999;
+		padding: 4px;
+		width: 30px;
+		height: 30px;
+		background-color: rgba(255, 255, 255, 0.9);
+		border-radius: 50%;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		margin-top: 6px;
+		transition: all 0.3s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		.favorite-icon {
+			font-size: 28px;
+			color: #666;
+			transition: all 0.3s ease;
+			display: inline-block;
+			line-height: 1;
+			margin-top: -2px;
+
+			&.is-favorited {
+				color: #ff5a5f;
+				transform: scale(1.15);
+			}
+		}
+
+		&:active {
+			transform: scale(0.95);
+			background-color: rgba(255, 255, 255, 1);
 		}
 	}
 </style>

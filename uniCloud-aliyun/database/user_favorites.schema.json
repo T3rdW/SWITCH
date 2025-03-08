@@ -1,0 +1,27 @@
+{
+    "bsonType": "object",
+    "required": ["openid", "switch_id", "create_time"],
+    "permission": {
+        "read": true,
+        "create": true,
+        "update": true,
+        "delete": true
+    },
+    "properties": {
+        "_id": {
+            "description": "ID，系统自动生成"
+        },
+        "openid": {
+            "bsonType": "string",
+            "description": "用户OpenID"
+        },
+        "switch_id": {
+            "bsonType": "string",
+            "description": "轴体ID"
+        },
+        "create_time": {
+            "bsonType": "timestamp",
+            "description": "收藏时间"
+        }
+    }
+}

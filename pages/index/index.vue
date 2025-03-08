@@ -88,14 +88,25 @@
 				showHistory: false, // 是否显示搜索历史
 				isNavigating: false, // 添加导航状态标记
 				isDeleting: false, // 添加删除操作标记
+				// 新增缓存相关配置
+				useCache: false, // 控制是否使用缓存
+				searchCache: {}, // 搜索结果缓存
+				cacheExpireTime: 30 * 60 * 1000, // 缓存过期时间(30分钟)
 			}
 		},
 
 		onLoad() {
-			// 从本地存储加载搜索历史
+			// 从本地存储加载搜索历史和缓存
 			const history = uni.getStorageSync('searchHistory')
 			if (history) {
 				this.searchHistory = JSON.parse(history)
+			}
+
+			const cache = uni.getStorageSync('searchCache')
+			if (cache) {
+				this.searchCache = JSON.parse(cache)
+				// 清理过期缓存
+				this.cleanExpiredCache()
 			}
 		},
 
@@ -146,13 +157,28 @@
 				})
 
 				try {
-					console.log('开始搜索:', keyword)
+					// 检查缓存
+					if (this.useCache) {
+						const cachedResult = this.getFromCache(keyword)
+						if (cachedResult) {
+							console.log('使用缓存数据:', {
+								keyword,
+								resultCount: cachedResult.length
+							})
+							this.switchList = cachedResult
+							this.hasSearch = true
+							uni.hideLoading()
+							return
+						}
+					}
+
+					console.log('开始云数据库搜索:', keyword)
 					const db = uniCloud.database()
 					const res = await db.collection('switches')
 						.where({ switch_name: new RegExp(keyword, 'i') })
 						.get()
 
-					console.log('搜索返回数据:', res)
+					console.log('云数据库搜索返回数据:', res)
 
 					this.switchList = Array.isArray(res.result.data) ? res.result.data : []
 					this.hasSearch = true
@@ -165,8 +191,11 @@
 						})
 					} else {
 						console.log('搜索成功, 找到记录数:', this.switchList.length)
-						// 只在有搜索结果时保存历史
+						// 只在有搜索结果时保存历史和缓存
 						this.saveSearchHistory(keyword)
+						if (this.useCache) {
+							this.saveToCache(keyword, this.switchList)
+						}
 					}
 
 				} catch (e) {
@@ -178,11 +207,6 @@
 					})
 				} finally {
 					uni.hideLoading()
-					console.log('搜索完成, 当前状态:', {
-						hasSearch: this.hasSearch,
-						resultCount: this.switchList?.length || 0,
-						keyword: keyword
-					})
 				}
 			},
 
@@ -209,25 +233,11 @@
 			async handleItemClick(item) {
 				// 如果元素有 isClicking 标记，说明正在处理点击，直接返回
 				if (item.isClicking) {
-					console.log('点击操作进行中，跳过重复点击', {
-						item: item.switch_name,
-						specs: {
-							force: item.actuation_force,
-							travel: item.actuation_travel
-						}
-					});
 					return;
 				}
 
 				// 如果正在导航中，直接返回
 				if (this.isNavigating) {
-					console.log('导航进行中，跳过重复点击', {
-						item: item.switch_name,
-						specs: {
-							force: item.actuation_force,
-							travel: item.actuation_travel
-						}
-					});
 					return;
 				}
 
@@ -243,19 +253,25 @@
 				});
 
 				try {
-					console.log('点击轴体项:', item)
-					console.log('准备跳转到详情页, ID:', item._id)
+					// 只保留一条有意义的日志
+					console.log('点击轴体:', {
+						name: item.switch_name,
+						id: item._id,
+						specs: {
+							force: item.actuation_force,
+							travel: item.actuation_travel
+						}
+					});
 
 					// 跳转到详情页
 					await uni.navigateTo({
 						url: `/pages/switchInfo/switchInfo?id=${item._id}`,
 						success: async () => {
-							console.log('跳转成功')
+							console.log('跳转成功，准备传递数据');
 							// 等待页面准备完成后再传递数据
 							setTimeout(() => {
 								// 传递数据
 								uni.$emit('switchData', item)
-								console.log('数据已传递到详情页')
 								// 隐藏加载提示
 								uni.hideLoading();
 							}, 100)
@@ -327,13 +343,11 @@
 
 			// 获取规格文本
 			getSpecText(item) {
-				console.log('规格数据:', item)
 				const force = item.actuation_force
 				const actuationForce = force ?
 					`触发压力: ${force.toString().toLowerCase().includes('gf') ? force : `${force}gf`}` : ''
 				const actuationTravel = item.actuation_travel ? ` 触发行程: ${item.actuation_travel}` : ''
 				const text = actuationForce + actuationTravel
-				console.log('规格文本:', text)
 				return text || '暂无规格信息'
 			},
 
@@ -360,6 +374,45 @@
 				this.searchHistory.splice(index, 1)
 				// 保存到本地存储
 				uni.setStorageSync('searchHistory', JSON.stringify(this.searchHistory))
+			},
+
+			// 新增缓存相关方法
+			getFromCache(keyword) {
+				const cachedItem = this.searchCache[keyword]
+				if (cachedItem && Date.now() - cachedItem.timestamp < this.cacheExpireTime) {
+					return cachedItem.data
+				}
+				return null
+			},
+
+			saveToCache(keyword, data) {
+				this.searchCache[keyword] = {
+					data: data,
+					timestamp: Date.now()
+				}
+				// 保存到本地存储
+				uni.setStorageSync('searchCache', JSON.stringify(this.searchCache))
+				console.log('搜索结果已缓存:', {
+					keyword,
+					resultCount: data.length
+				})
+			},
+
+			cleanExpiredCache() {
+				const now = Date.now()
+				let cleaned = false
+
+				Object.keys(this.searchCache).forEach(key => {
+					if (now - this.searchCache[key].timestamp > this.cacheExpireTime) {
+						delete this.searchCache[key]
+						cleaned = true
+					}
+				})
+
+				if (cleaned) {
+					console.log('已清理过期缓存')
+					uni.setStorageSync('searchCache', JSON.stringify(this.searchCache))
+				}
 			},
 		}
 	}

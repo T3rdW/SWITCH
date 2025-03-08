@@ -1,5 +1,3 @@
-/* 水平间距 */
-/* 水平间距 */
 /*每个页面公共css */
 /* 水平间距 */
 @font-face {
@@ -28,16 +26,16 @@
   background-color: #2979ff;
 }
 .uni-primary-disable {
-  color: #94bcff;
+  color: #8fb9ff;
 }
 .uni-primary-disable-bg {
-  background-color: #94bcff;
+  background-color: #8fb9ff;
 }
 .uni-primary-light {
-  color: #d4e4ff;
+  color: #a9c9ff;
 }
 .uni-primary-light-bg {
-  background-color: #d4e4ff;
+  background-color: #a9c9ff;
 }
 .uni-success {
   color: #18bc37;
@@ -46,16 +44,16 @@
   background-color: #18bc37;
 }
 .uni-success-disable {
-  color: #8cde9b;
+  color: #51e96e;
 }
 .uni-success-disable-bg {
-  background-color: #8cde9b;
+  background-color: #51e96e;
 }
 .uni-success-light {
-  color: #d1f2d7;
+  color: #68ec81;
 }
 .uni-success-light-bg {
-  background-color: #d1f2d7;
+  background-color: #68ec81;
 }
 .uni-warning {
   color: #f3a73f;
@@ -70,10 +68,10 @@
   background-color: #f9d39f;
 }
 .uni-warning-light {
-  color: #fdedd9;
+  color: #fbdeb7;
 }
 .uni-warning-light-bg {
-  background-color: #fdedd9;
+  background-color: #fbdeb7;
 }
 .uni-error {
   color: #e43d33;
@@ -82,16 +80,16 @@
   background-color: #e43d33;
 }
 .uni-error-disable {
-  color: #f29e99;
+  color: #f0938d;
 }
 .uni-error-disable-bg {
-  background-color: #f29e99;
+  background-color: #f0938d;
 }
 .uni-error-light {
-  color: #fad8d6;
+  color: #f3a8a4;
 }
 .uni-error-light-bg {
-  background-color: #fad8d6;
+  background-color: #f3a8a4;
 }
 .uni-info {
   color: #8f939c;
@@ -100,16 +98,16 @@
   background-color: #8f939c;
 }
 .uni-info-disable {
-  color: #c7c9ce;
+  color: #c5c7cc;
 }
 .uni-info-disable-bg {
-  background-color: #c7c9ce;
+  background-color: #c5c7cc;
 }
 .uni-info-light {
-  color: #e9e9eb;
+  color: #d3d4d8;
 }
 .uni-info-light-bg {
-  background-color: #e9e9eb;
+  background-color: #d3d4d8;
 }
 .uni-main-color {
   color: #3a3a3a;

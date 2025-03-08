@@ -1,5 +1,4 @@
-/* 水平间距 */
-/* 水平间距 */
+
 .uniui-cart-filled:before {
   content: "\e6d0";
 }
